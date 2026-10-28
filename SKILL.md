@@ -20,7 +20,14 @@ description: 원장님 학원 홈페이지와 관리자 화면을 템플릿으�
 - 끈 기능은 홈페이지 메뉴와 관리자 메뉴에서 사라지고, 보안 규칙이 그 자료(리포트, 원비, 보강 신청, 레벨테스트 결과)를 막는다.
 - 원장님은 처음 설정 2단계 '기능'에서 체크로 고르고, 나중에 '홈페이지 정보' 탭에서 언제든 바꾼다.
 
-**학원마다 다른 모양(사진은 넣지 않는다).** 로고에서 뽑은 주 색(로고를 올리면 저절로 뽑힌다), 글꼴(`gothic`·`serif`), 모서리(`sharp`·`soft`·`round`), 첫 화면 배치(`split`·`center`)로 나눈다. `look`에 적는다.
+**학원마다 다른 모양(사진은 넣지 않는다, 충쌤 결정).** 같은 틀·같은 자료를 `theme` 한 칸으로 다르게 그린다. 모두 CSS 변수(:root)로 바뀐다.
+- `layout`: `split` 나란히 / `center` 가운데 / `timetable` 시간표 먼저 / `magazine` 잡지(글 중심, 번호 붙은 장) / `cards` 카드 / `flow` 세로 한 줄
+- `palette`: `primary`(주 색, 로고를 올리면 저절로 뽑힘), `accent`(비우면 자동), `mode`(`white` 흰 바탕 / `tint` 옅은 색 바탕 / `deep` 진한 첫 화면). 바탕·글자·주 색·보조·옅은 칸·선 6색을 주 색 하나로 계산하고, 흰 글자/주 색, 본문/바탕, 흐린 글자/바탕, 흰 글자/보조 색을 모두 4.5:1 이상으로 맞춘다. 관리자 화면에 대비 숫자가 보인다
+- `font`: `clean` 단정한 고딕 / `serif` 명조 제목 / `bold` 굵은 고딕 (웹 글꼴을 불러오지 않는다)
+- `radius`: `sharp` / `soft` / `round` (버튼 모서리 최대 14px, 알약 모양은 안 나온다)
+- `density`: `airy` 넉넉하게 / `compact` 촘촘하게
+- 원장님은 처음 설정 3단계 '모양'에서 레이아웃 미리보기 그림을 보고 고른다. 같은 지역 학원끼리 layout·주 색이 겹치지 않게 메이트가 먼저 권한다.
+- 데모로 같은 자료의 다른 모양을 보여 줄 때: `https://yomates-academy-demo.web.app/?theme=a` (a~f)
 
 다 끝나면 원장님은 아래를 갖는다.
 - `https://<프로젝트아이디>.web.app`: 학원 소개, 반·시간표, 원비, 선생님, 후기, 오시는 길, 입회·상담 신청, 위쪽 공지 띠
@@ -83,8 +90,7 @@ https://github.com/from5302-lab/yomates-firebase-skill 의 순서를 따른다. 
 | tagline | 한 줄 소개. 두 줄이면 `\n` |
 | intro | 학원 소개 몇 줄 |
 | logo | 비워 두면 이름 첫 글자. 그림은 관리자 화면에서 올린다 |
-| color | 주 색 `#RRGGBB` (간판·로고 색). 로고 파일이 있으면 관리자 화면에서 로고를 올릴 때 저절로 뽑힌다 |
-| look | `{ "font": "gothic", "corner": "soft", "layout": "split" }`. 옆 학원과 겹치지 않게 고른다 |
+| theme | `{ "layout": "split", "palette": { "primary": "#1E5BB8", "accent": "", "mode": "white" }, "font": "clean", "radius": "soft", "density": "airy" }`. primary는 간판·로고 색 |
 | features | 켤 기능만 `true`. 원장님께 무엇을 쓸지 먼저 묻는다 |
 | address, parking, phone | 주소, 주차, 대표 번호 |
 | regNo | 학원·교습소 등록번호 문구 |

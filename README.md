@@ -6,7 +6,8 @@
 - 데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app · 관리자 화면 https://yomates-academy-demo.web.app/admin
 - 기본 기능만 켠 데모: https://yomates-academy-demo.web.app/?demo=basic · https://yomates-academy-demo.web.app/admin?demo=basic
 - 틀은 하나이고 기능을 켜고 꺼요: 월말 리포트, 원비 납부 표, 원비 공개, 선생님 소개, 후기, 공지 띠, 레벨테스트, 보강 신청 (`academy.json`의 `features`)
-- 학원마다 모양이 달라요: 로고에서 뽑은 색, 글꼴, 모서리, 첫 화면 배치 (`look`). 사진은 넣지 않아요
+- 학원마다 모양이 달라요: 레이아웃 6가지, 로고에서 뽑아 대비를 맞춘 6색 팔레트, 글꼴 짝 3가지, 모서리 3단계, 여백 2단계 (`theme`). 사진은 넣지 않아요
+- 같은 자료, 다른 모양 데모: https://yomates-academy-demo.web.app/?theme=a … ?theme=f
 - 세팅 순서: [SKILL.md](SKILL.md) (요메이트 스킬 `학원-홈페이지-템플릿`)
 
 ## 들어 있는 것

@@ -28,7 +28,12 @@ fs.writeFileSync(path.join(root, "public/academy.json"), JSON.stringify(pub, nul
 const tpl = fs.readFileSync(path.join(root, "firestore.rules.template"), "utf8");
 fs.writeFileSync(path.join(root, "firestore.rules"), tpl.replace("__ADMIN_EMAILS__", JSON.stringify(admins).replace(/"/g, "'")));
 
-const color = /^#[0-9a-f]{6}$/i.test(c.color || "") ? c.color : "#1E5BB8";
+const TH = { layout: ["split", "center", "timetable", "magazine", "cards", "flow"], mode: ["white", "tint", "deep"], font: ["clean", "serif", "bold"], radius: ["sharp", "soft", "round"], density: ["airy", "compact"] };
+const t = c.theme || {}; const pal = t.palette || {};
+for (const k of ["layout", "font", "radius", "density"]) if (t[k] && !TH[k].includes(t[k])) { console.error(`theme.${k}는 ${TH[k].join("|")} 중 하나`); process.exit(1); }
+if (pal.mode && !TH.mode.includes(pal.mode)) { console.error(`theme.palette.mode는 ${TH.mode.join("|")} 중 하나`); process.exit(1); }
+for (const k of ["primary", "accent"]) if (pal[k] && !/^#[0-9a-f]{6}$/i.test(pal[k])) { console.error(`theme.palette.${k}는 #RRGGBB`); process.exit(1); }
+const color = pal.primary || (/^#[0-9a-f]{6}$/i.test(c.color || "") ? c.color : "#1E5BB8");
 const ch = [...c.name.replace(/\s/g, "")][0] || "학";
 fs.writeFileSync(path.join(root, "public/favicon.svg"),
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${color}"/><text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="34" font-weight="800" fill="#fff">${ch}</text></svg>\n`);
@@ -46,5 +51,5 @@ const meta = `<!-- meta:start (tools/apply.mjs가 academy.json 값으로 채운�
 <!-- meta:end -->`;
 const ix = path.join(root, "public/index.html");
 fs.writeFileSync(ix, fs.readFileSync(ix, "utf8").replace(/<!-- meta:start[\s\S]*?<!-- meta:end -->/, meta));
-console.log(`반영했어요: ${c.name} · 반 ${c.classes.length}개 · 관리자 ${admins.length}명 · 켠 기능 ${FEATS.filter(k => c.features[k]).join(", ") || "기본만"}`);
+console.log(`반영했어요: ${c.name} · 모양 ${t.layout || "split"}/${color} · 반 ${c.classes.length}개 · 관리자 ${admins.length}명 · 켠 기능 ${FEATS.filter(k => c.features[k]).join(", ") || "기본만"}`);
 console.log("다음: node tools/shots.mjs 로 og.png(1200x630)와 apple-touch-icon.png(180x180)를 만든다 (playwright 필요, 없으면 건너뛰어도 됨)");

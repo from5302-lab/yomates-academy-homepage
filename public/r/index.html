@@ -36,7 +36,7 @@ await init();
 const t = new URLSearchParams(location.search).get("t") || "";
 let r = null, c = null;
 try { [r, c] = await Promise.all([getReport(t), getConfig()]); } catch (e) {}
-if (c) applyColor(c.color);
+if (c) applyColor(c);
 if (!r) {
   app.innerHTML = `<div class="miss"><h1>리포트를 찾지 못했어요</h1><p class="muted">문자로 받은 주소를 다시 눌러 주세요.</p></div>`;
 } else {

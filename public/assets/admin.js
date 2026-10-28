@@ -36,7 +36,7 @@ D.onAuth(async u => {
   }
   if (S.cfg && new URLSearchParams(location.search).has("setup")) S.cfg._setup = true;
   if (!S.cfg || !S.cfg.name || S.cfg._setup) { S.cfg = S.cfg && S.cfg.name ? S.cfg : await D.loadDefaults(); S.cfg._setup = true; return renderSetup(); }
-  D.applyLook(S.cfg);
+  D.applyTheme(S.cfg);
   render();
 });
 
@@ -325,12 +325,12 @@ ${st.map(s => { const p = payOf(s.id, S.month); return `<tr><td><b>${esc(s.name)
 function steps() {
   const c = S.cfg, f = k => on(c, k);
   const extra = [f("teachers") && "teachers", "consultSlots", f("reviews") && "reviews", f("notice") && "notice", f("leveltest") && "levelQuestions", f("leveltest") && "levelResults"].filter(Boolean);
-  return [["학원", ["name", "tagline", "intro", "logo", "color", "look"]], ["기능", ["features"]], ["위치·연락", ["address", "parking", "phone", "regNo"]],
+  return [["학원", ["name", "tagline", "intro", "logo"]], ["기능", ["features"]], ["모양", ["theme"]], ["위치·연락", ["address", "parking", "phone", "regNo"]],
     ["반·원비", ["classes", f("fees") && "feeNote"].filter(Boolean)], [f("teachers") ? "선생님·상담" : "상담 시간", extra], ["확인", []]];
 }
 const COLORS = ["#1E5BB8", "#0F766E", "#7C3AED", "#C2410C", "#BE185D", "#1F2937"];
 const FIELDS = {
-  features: ["기능 켜고 끄기", "features"], look: ["모양", "look"],
+  features: ["기능 켜고 끄기", "features"], theme: ["홈페이지 모양", "theme"],
   levelQuestions: ["레벨테스트 문항", "rows", [["q", "문제", "", "ta"], ["o1", "보기 1"], ["o2", "보기 2"], ["o3", "보기 3"], ["o4", "보기 4"], ["a", "정답 번호", "1", "num"]], "문항"],
   levelResults: ["레벨테스트 결과", "rows", [["min", "이 점수부터", "0", "num"], ["name", "단계 이름", "Level 1"], ["cls", "추천 반"], ["text", "한 줄 설명", "", "ta"]], "결과"],
   name: ["학원 이름", "in"], tagline: ["한 줄 소개", "ta", "줄을 나눌 곳에서 엔터를 눌러요"], intro: ["학원 소개", "ta"], logo: ["로고", "logo"], color: ["주 색", "color"],
@@ -346,7 +346,7 @@ function fieldHtml(k) {
   const [label, type, a, b] = FIELDS[k]; const c = S.cfg; const v = c[k];
   if (type === "features") { const F = c.features || {}; return `<div class="field"><span>${label}</span><p class="small muted pl">학원 소개, 반·시간표, 오시는 길, 상담 신청,
 한눈에·일정은 늘 켜져 있어요.</p><div class="feats">${D.FEAT.map(([fk, fl, fd]) => `<label class="feat${F[fk] ? " on" : ""}"><input type="checkbox" data-feat="${fk}"${F[fk] ? " checked" : ""}><span><b>${fl}</b><em>${fd}</em></span></label>`).join("")}</div></div>`; }
-  if (type === "look") { const L = c.look || {}; return `<div class="field"><span>${label}</span><p class="small muted">학원마다 다르게 보이도록 고르는 칸이에요. 사진은 넣지 않아요.</p>${Object.entries(D.LOOKS).map(([lk, opts]) => `<div class="look-row"><em>${{ font: "글꼴", corner: "모서리", layout: "첫 화면" }[lk]}</em><div class="seg">${opts.map(([v, t]) => `<button type="button" class="${(L[lk] || opts[0][0]) === v ? "on" : ""}" data-look="${lk}" data-v="${v}">${t}</button>`).join("")}</div></div>`).join("")}</div>`; }
+  if (type === "theme") return themeHtml(c);
   if (type === "in") return `<label class="field"><span>${label}</span><input class="in" data-k="${k}" value="${esc(v || "")}"${a ? ` placeholder="${esc(a)}"` : ""}></label>`;
   if (type === "ta") return `<label class="field"><span>${label}</span><textarea class="in" data-k="${k}" rows="3"${a ? ` placeholder="${esc(a)}"` : ""}>${esc(v || "")}</textarea></label>`;
   if (type === "color") return `<div class="field"><span>${label}</span><div class="swatches">${COLORS.map(x => `<button type="button" class="sw${(v || "").toLowerCase() === x.toLowerCase() ? " on" : ""}" style="background:${x}" data-color="${x}" aria-label="${x}"></button>`).join("")}<label class="sw-pick"><input type="color" data-k="color" value="${esc(v || "#1E5BB8")}"><span>직접 고르기</span></label></div></div>`;
@@ -354,6 +354,36 @@ function fieldHtml(k) {
   if (type === "notice") { const n = v || {}; return `<div class="field"><span>${label}</span><div class="row2"><input class="in" data-n="text" value="${esc(n.text || "")}" placeholder="예: 11월 신규반 2자리 남았어요"><input class="in" type="date" data-n="until" value="${esc(n.until || "")}" aria-label="끝나는 날"></div><p class="small muted">끝나는 날이 지나면 저절로 내려가요.</p></div>`; }
   if (type === "list") return `<div class="field"><span>${label}</span>${(v || []).map((x, i) => `<div class="li-row"><input class="in" data-l="${k}" data-i="${i}" value="${esc(x)}" placeholder="${esc(a)}"><button type="button" class="btn sm ghost" data-ldel="${k}" data-i="${i}">빼기</button></div>`).join("")}<button type="button" class="btn sm add" data-ladd="${k}">+ 시간 더하기</button></div>`;
   if (type === "rows") return `<div class="field"><span>${label}</span>${k === "classes" ? `<div class="note">원비는 교육청에 게시한 금액 그대로 적어요.</div>` : ""}${(v || []).map((row, i) => `<div class="rowcard"><div class="rc-grid">${a.map(([f, l, ph, t]) => t === "ta" ? `<label class="field full"><span>${l}</span><textarea class="in" rows="2" data-r="${k}" data-i="${i}" data-f="${f}"${ph ? ` placeholder="${esc(ph)}"` : ""}>${esc(row[f] ?? "")}</textarea></label>` : `<label class="field"><span>${l}</span><input class="in" data-r="${k}" data-i="${i}" data-f="${f}"${t === "num" ? ' inputmode="numeric" data-num="1"' : ""} value="${esc(row[f] ?? "")}"${ph ? ` placeholder="${esc(ph)}"` : ""}></label>`).join("")}</div><div class="rc-act"><button type="button" class="btn xs ghost" data-rdel="${k}" data-i="${i}">이 ${b} 빼기</button></div></div>`).join("")}<button type="button" class="btn sm add" data-radd="${k}">+ ${b} 더하기</button></div>`;
+}
+// 레이아웃 미리보기 그림 (사진 없이 도형으로)
+function thumb(k) {
+  const P = 'fill="var(--pri)"', S2 = 'fill="var(--pri-line)"', L = 'fill="var(--line)"', I = 'fill="var(--ink)"';
+  const g = {
+    split: `<rect x="8" y="10" width="44" height="6" rx="1" ${I}/><rect x="8" y="20" width="36" height="6" rx="1" ${I}/><rect x="8" y="32" width="30" height="3" ${L}/><rect x="8" y="44" width="20" height="8" rx="2" ${P}/><rect x="62" y="10" width="34" height="12" rx="2" ${S2}/><rect x="62" y="26" width="34" height="12" rx="2" ${S2}/><rect x="62" y="42" width="34" height="12" rx="2" ${S2}/>`,
+    center: `<rect x="22" y="10" width="60" height="6" rx="1" ${I}/><rect x="28" y="20" width="48" height="6" rx="1" ${I}/><rect x="34" y="31" width="36" height="3" ${L}/><rect x="40" y="39" width="24" height="8" rx="2" ${P}/><rect x="10" y="52" width="26" height="6" rx="1" ${S2}/><rect x="39" y="52" width="26" height="6" rx="1" ${S2}/><rect x="68" y="52" width="26" height="6" rx="1" ${S2}/>`,
+    timetable: `<rect x="8" y="12" width="36" height="6" rx="1" ${I}/><rect x="8" y="22" width="30" height="6" rx="1" ${I}/><rect x="8" y="36" width="18" height="8" rx="2" ${P}/><rect x="52" y="8" width="44" height="50" rx="3" fill="#fff" stroke="var(--line)"/><rect x="56" y="16" width="36" height="3" ${P}/><rect x="56" y="26" width="36" height="3" ${L}/><rect x="56" y="35" width="36" height="3" ${L}/><rect x="56" y="44" width="36" height="3" ${L}/>`,
+    magazine: `<rect x="8" y="8" width="70" height="8" rx="1" ${I}/><rect x="8" y="20" width="56" height="8" rx="1" ${I}/><rect x="8" y="33" width="88" height="2" ${I}/><text x="8" y="47" font-size="8" font-weight="700" ${P}>01</text><rect x="22" y="41" width="40" height="5" ${I}/><rect x="8" y="51" width="88" height="2" ${L}/><rect x="8" y="56" width="70" height="2" ${L}/>`,
+    cards: `<rect x="6" y="6" width="92" height="26" rx="4" ${P}/><rect x="12" y="13" width="44" height="5" rx="1" fill="#fff"/><rect x="12" y="21" width="30" height="5" rx="1" fill="#fff"/><rect x="6" y="38" width="28" height="20" rx="4" ${S2}/><rect x="38" y="38" width="28" height="20" rx="4" ${S2}/><rect x="70" y="38" width="28" height="20" rx="4" fill="var(--acc-soft)"/>`,
+    flow: `<rect x="30" y="6" width="44" height="52" rx="3" fill="#fff" stroke="var(--line)"/><rect x="35" y="12" width="30" height="5" rx="1" ${I}/><rect x="35" y="20" width="24" height="5" rx="1" ${I}/><rect x="35" y="30" width="34" height="6" rx="1" ${P}/><rect x="35" y="40" width="34" height="6" rx="1" ${S2}/><rect x="35" y="49" width="34" height="6" rx="1" ${S2}/>`
+  }[k];
+  return `<svg viewBox="0 0 104 64" aria-hidden="true"><rect width="104" height="64" rx="4" fill="var(--bg)"/>${g}</svg>`;
+}
+function themeHtml(c) {
+  const t = D.themeOf(c), P = D.palette(t), seg = (key, opts, cur) => `<div class="seg">${opts.map(([v, l]) => `<button type="button" class="${cur === v ? "on" : ""}" data-th="${key}" data-v="${v}">${l}</button>`).join("")}</div>`;
+  const chk = Object.entries(P._check).map(([k, v]) => `<li class="${v >= 4.5 ? "ok" : "bad"}"><span>${k}</span><b class="num">${v.toFixed(1)}:1</b></li>`).join("");
+  return `<div class="field"><span>레이아웃</span><p class="small muted">같은 내용을 다른 배치로 보여요. 사진은 넣지 않아요.</p>
+<div class="lay">${D.THEME.layout.map(([v, l, d]) => `<button type="button" class="lay-o${t.layout === v ? " on" : ""}" data-th="layout" data-v="${v}">${thumb(v)}<b>${l}</b><em>${d}</em></button>`).join("")}</div></div>
+<div class="field"><span>색</span><p class="small muted pl">로고를 올리면 주 색이 저절로 뽑혀요.
+나머지 색과 글자 대비는 알아서 맞춰요.</p>
+<div class="swatches">${COLORS.map(x => `<button type="button" class="sw${t.palette.primary.toLowerCase() === x.toLowerCase() ? " on" : ""}" style="background:${x}" data-pri="${x}" aria-label="주 색 ${x}"></button>`).join("")}<label class="sw-pick"><input type="color" data-pal="primary" value="${esc(t.palette.primary)}"><span>주 색 고르기</span></label></div>
+<div class="pal">${["bg", "ink", "pri", "acc", "soft", "line"].map(k => `<div class="pal-c"><i style="background:${P[k]}"></i><span>${{ bg: "바탕", ink: "글자", pri: "주 색", acc: "보조", soft: "옅은 칸", line: "선" }[k]}</span><em class="num">${P[k]}</em></div>`).join("")}</div>
+<div class="look-row"><em>보조 색</em><div class="row-in"><label class="sw-pick"><input type="color" data-pal="accent" value="${esc(t.palette.accent || P.acc)}"><span>${t.palette.accent ? "직접 고름" : "자동"}</span></label>${t.palette.accent ? `<button type="button" class="btn sm ghost" data-accauto="1">자동으로</button>` : ""}</div></div>
+<div class="look-row"><em>바탕</em>${seg("mode", D.THEME.mode, t.palette.mode)}</div>
+<ul class="contrast">${chk}</ul></div>
+<div class="field"><span>글꼴·모서리·여백</span>
+<div class="look-row"><em>글꼴</em>${seg("font", D.THEME.font, t.font)}</div>
+<div class="look-row"><em>모서리</em>${seg("radius", D.THEME.radius, t.radius)}</div>
+<div class="look-row"><em>여백</em>${seg("density", D.THEME.density, t.density)}</div></div>`;
 }
 function bindFields(root, rerender) {
   const c = S.cfg;
@@ -367,8 +397,12 @@ function bindFields(root, rerender) {
   root.querySelectorAll("[data-radd]").forEach(b => b.onclick = () => { (c[b.dataset.radd] = c[b.dataset.radd] || []).push({}); rerender(); });
   root.querySelectorAll("[data-rdel]").forEach(b => b.onclick = () => { c[b.dataset.rdel].splice(+b.dataset.i, 1); rerender(); });
   root.querySelectorAll("[data-feat]").forEach(i => i.onchange = () => { c.features = { ...(c.features || {}), [i.dataset.feat]: i.checked }; rerender(); });
-  root.querySelectorAll("[data-look]").forEach(b => b.onclick = () => { c.look = { ...(c.look || {}), [b.dataset.look]: b.dataset.v }; D.applyLook(c); rerender(); });
-  const lf = root.querySelector("#logoF"); if (lf) lf.onchange = async () => { const f = lf.files[0]; if (!f) return; c.logo = await shrink(f, 256); const col = await D.colorFromImage(c.logo); if (col) { c.color = col; D.applyColor(col); toast("로고에서 주 색을 뽑았어요"); } rerender(); };
+  const T = () => { c.theme = D.themeOf(c); delete c.color; return c.theme; };
+  root.querySelectorAll("[data-th]").forEach(b => b.onclick = () => { const t = T(); if (b.dataset.th === "mode") t.palette.mode = b.dataset.v; else t[b.dataset.th] = b.dataset.v; D.applyTheme(c); rerender(); });
+  root.querySelectorAll("[data-pri]").forEach(b => b.onclick = () => { T().palette.primary = b.dataset.pri; D.applyTheme(c); rerender(); });
+  root.querySelectorAll("[data-pal]").forEach(i => i.onchange = () => { T().palette[i.dataset.pal] = i.value; D.applyTheme(c); rerender(); });
+  root.querySelectorAll("[data-accauto]").forEach(b => b.onclick = () => { T().palette.accent = ""; D.applyTheme(c); rerender(); });
+  const lf = root.querySelector("#logoF"); if (lf) lf.onchange = async () => { const f = lf.files[0]; if (!f) return; c.logo = await shrink(f, 256); const col = await D.colorFromImage(c.logo); if (col) { c.theme = D.themeOf(c); delete c.color; c.theme.palette.primary = col; D.applyTheme(c); toast("로고에서 주 색을 뽑았어요"); } rerender(); };
   const lx = root.querySelector("#logoX"); if (lx) lx.onclick = () => { c.logo = ""; rerender(); };
 }
 function shrink(file, px) {
@@ -379,13 +413,13 @@ function jsonTools() {
 }
 function bindJson(rerender) {
   document.getElementById("jIn").onclick = () => document.getElementById("jF").click();
-  document.getElementById("jF").onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); Object.assign(S.cfg, j); D.applyColor(S.cfg.color); toast("JSON 값으로 채웠어요"); rerender(); } catch (x) { toast("JSON 파일을 읽지 못했어요"); } };
+  document.getElementById("jF").onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); Object.assign(S.cfg, j); D.applyTheme(S.cfg); toast("JSON 값으로 채웠어요"); rerender(); } catch (x) { toast("JSON 파일을 읽지 못했어요"); } };
   document.getElementById("jOut").onclick = () => { const c = { ...S.cfg }; delete c._setup; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(c, null, 2)], { type: "application/json" })); a.download = "academy.json"; a.click(); };
 }
 function site(m) {
   const draw = () => {
     const f = k => on(S.cfg, k);
-    const keys = ["features", "name", "tagline", "intro", "logo", "color", "look", f("notice") && "notice", "address", "parking", "phone", "regNo", "classes", f("fees") && "feeNote", f("teachers") && "teachers", "consultSlots", f("reviews") && "reviews", f("leveltest") && "levelQuestions", f("leveltest") && "levelResults"].filter(Boolean);
+    const keys = ["features", "name", "tagline", "intro", "logo", "theme", f("notice") && "notice", "address", "parking", "phone", "regNo", "classes", f("fees") && "feeNote", f("teachers") && "teachers", "consultSlots", f("reviews") && "reviews", f("leveltest") && "levelQuestions", f("leveltest") && "levelResults"].filter(Boolean);
     m.innerHTML = `<div class="toolbar">${jsonTools()}<div class="tb-r"><a class="btn sm" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지 보기</a></div></div>
 <div class="card panel editor">${keys.map(fieldHtml).join("")}</div>
 <div class="savebar"><button class="btn pri" id="save">홈페이지에 저장</button></div>`;
@@ -397,11 +431,11 @@ function site(m) {
 
 /* ---------- 처음 설정 ---------- */
 function renderSetup() {
-  D.applyLook(S.cfg);
+  D.applyTheme(S.cfg);
   const draw = () => {
     const STEPS = steps(); const [title, keys] = STEPS[S.step]; const last = S.step === STEPS.length - 1; const c = S.cfg;
     app.innerHTML = `<div class="setup"><div class="setup-hd"><p class="eyebrow">처음 설정 · ${S.step + 1}/${STEPS.length}</p><h1>${title}</h1>
-<ol class="steps">${STEPS.map((s, i) => `<li class="${i < S.step ? "done" : i === S.step ? "on" : ""}"><span>${i + 1}</span><em>${["학원", "기능", "위치", "원비", "상담", "확인"][i]}</em></li>`).join("")}</ol></div>
+<ol class="steps">${STEPS.map((s, i) => `<li class="${i < S.step ? "done" : i === S.step ? "on" : ""}"><span>${i + 1}</span><em>${["학원", "기능", "모양", "위치", "원비", "상담", "확인"][i]}</em></li>`).join("")}</ol></div>
 ${S.step === 0 ? `<div class="note pl">요메이트가 장부 값으로 미리 채워 두었으면
 맞는지 보고 다음만 누르면 돼요.</div>${jsonTools()}` : ""}
 <div class="card panel editor">${last ? summary(c) : keys.map(fieldHtml).join("")}</div>

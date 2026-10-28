@@ -1,4 +1,4 @@
-import { init, getConfig, addInquiry, addMakeup, esc, won, ymd, applyLook, maskPhone, isDemo, on } from "./core.js";
+import { init, getConfig, addInquiry, addMakeup, esc, won, ymd, applyTheme, themeOf, maskPhone, isDemo, on } from "./core.js";
 
 const I = {
   phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
@@ -22,9 +22,10 @@ const GRADES = ["초1", "초2", "초3", "초4", "초5", "초6", "중1", "중2", 
 학원 정보를 넣으면 이곳에 보여요.</p><a class="btn pri" href="/admin/">관리자 화면 열기</a></main>`;
     return;
   }
-  applyLook(c);
+  applyTheme(c);
+  const TT = themeOf(c).layout === "timetable";
   document.title = c.name;
-  app.innerHTML = [on(c, "notice") ? notice(c) : "", header(c), hero(c), classes(c), on(c, "fees") ? fees(c) : "", on(c, "leveltest") ? level(c) : "", on(c, "teachers") ? teachers(c) : "", on(c, "reviews") ? reviews(c) : "", place(c), apply(c), on(c, "makeup") ? makeup(c) : "", footer(c), dock(c)].join("");
+  app.innerHTML = [on(c, "notice") ? notice(c) : "", header(c), hero(c), TT ? "" : classes(c), on(c, "fees") && !TT ? fees(c) : "", on(c, "leveltest") ? level(c) : "", on(c, "teachers") ? teachers(c) : "", on(c, "reviews") ? reviews(c) : "", place(c), apply(c), on(c, "makeup") ? makeup(c) : "", footer(c), dock(c)].join("");
   bindForm(c);
   if (on(c, "leveltest")) bindLevel(c);
   if (on(c, "makeup")) bindMakeup(c);
@@ -46,7 +47,7 @@ function logo(c) {
 }
 function header(c) {
   return `<header class="hd"><div class="wrap hd-in"><a class="brand" href="#top">${logo(c)}<span>${esc(c.name)}</span></a>
-<nav class="hd-nav">${[["classes", "반·시간표", 1], ["fees", "원비", on(c, "fees")], ["level", "레벨테스트", on(c, "leveltest") && (c.levelQuestions || []).length], ["teachers", "선생님", on(c, "teachers")], ["place", "오시는 길", 1], ["makeup", "보강 신청", on(c, "makeup")]].filter(x => x[2]).map(x => `<a href="#${x[0]}">${x[1]}</a>`).join("")}</nav>
+<nav class="hd-nav">${[["classes", "반·시간표", 1], ["fees", "원비", on(c, "fees") && themeOf(c).layout !== "timetable"], ["level", "레벨테스트", on(c, "leveltest") && (c.levelQuestions || []).length], ["teachers", "선생님", on(c, "teachers")], ["place", "오시는 길", 1], ["makeup", "보강 신청", on(c, "makeup")]].filter(x => x[2]).map(x => `<a href="#${x[0]}">${x[1]}</a>`).join("")}</nav>
 <a class="btn pri sm hd-cta" href="#apply">상담 신청</a></div></header>`;
 }
 function hero(c) {
@@ -57,11 +58,24 @@ function hero(c) {
     seats ? [`반마다 ${seats}명까지`, "정원"] : null,
     (c.consultSlots || []).length ? [c.consultSlots[0], "상담 시간"] : null
   ].filter(Boolean);
+  if (themeOf(c).layout === "timetable") return heroTable(c);
   return `<section class="hero" id="top"><div class="wrap hero-in">
 <div class="hero-main"><h1 class="pl">${esc(c.tagline)}</h1>
 ${c.intro ? `<p class="hero-p pl">${esc(c.intro)}</p>` : ""}
 <div class="hero-cta"><a class="btn pri" href="#apply">${I.pen}상담 신청하기</a>${c.phone ? `<a class="btn" href="tel:${esc(c.phone.replace(/[^0-9+]/g, ""))}">${I.phone}${esc(c.phone)}</a>` : ""}</div></div>
 ${facts.length ? `<ul class="facts">${facts.map(f => `<li><b>${esc(f[0])}</b><span>${esc(f[1])}</span></li>`).join("")}</ul>` : ""}
+</div></section>`;
+}
+// 레이아웃 '시간표 먼저': 첫 화면에 반·시간표(원비 공개를 켰으면 원비까지) 표를 바로 보인다
+function heroTable(c) {
+  const cl = c.classes || [], fee = on(c, "fees") && cl.some(x => x.fee);
+  return `<section class="hero hero-tt" id="top"><div class="wrap hero-in">
+<div class="hero-main"><h1 class="pl">${esc(c.tagline)}</h1>
+${c.intro ? `<p class="hero-p pl">${esc(c.intro)}</p>` : ""}
+<div class="hero-cta"><a class="btn pri" href="#apply">${I.pen}상담 신청하기</a>${c.phone ? `<a class="btn" href="tel:${esc(c.phone.replace(/[^0-9+]/g, ""))}">${I.phone}${esc(c.phone)}</a>` : ""}</div></div>
+<div class="card tt" id="classes"><div class="tt-hd"><h2>반·시간표</h2>${(c.consultSlots || [])[0] ? `<span class="tag pri">상담 ${esc(c.consultSlots[0])}</span>` : ""}</div>
+<ul class="tt-list">${cl.map(x => `<li><div class="tt-n"><b>${esc(x.name)}</b><span>${esc(x.grade || "")}${x.seats ? ` · ${esc(x.seats)}명` : ""}</span></div><div class="tt-t"><b>${esc(x.days || "")}</b><span>${esc(x.time || "")}</span></div>${fee ? `<div class="tt-f num">${x.fee ? won(x.fee) : ""}</div>` : ""}</li>`).join("")}</ul>
+${fee ? `<p class="tt-note small">${I.info}<span class="pl">교육청에 게시한 교습비 그대로 받아요.${c.feeNote ? "\n" + esc(c.feeNote) : ""}</span></p>` : ""}</div>
 </div></section>`;
 }
 function sec(id, title, body, sub) {

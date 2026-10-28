@@ -151,6 +151,21 @@ div.stat { cursor: default; }
 .feat b { font-size: 15px; }
 .feat em { font-style: normal; font-size: 13px; color: var(--sub); line-height: 1.5; }
 .look-row { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 10px; }
+.row-in { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lay { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lay-o { display: grid; gap: 4px; justify-items: start; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-btn); background: #fff; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.lay-o svg { width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--line); }
+.lay-o b { font-size: 14px; }
+.lay-o em { font-style: normal; font-size: 12px; color: var(--sub); line-height: 1.4; }
+.lay-o.on { border-color: var(--pri); box-shadow: 0 0 0 1px var(--pri); background: var(--pri-soft); }
+.pal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pal-c { display: grid; grid-template-columns: 28px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-btn); background: #fff; }
+.pal-c i { grid-row: 1 / span 2; width: 28px; height: 28px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.pal-c span { font-size: 12px; font-weight: 600; }
+.pal-c em { font-style: normal; font-size: 11px; color: var(--sub); }
+.contrast { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.contrast li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; padding: 0 10px; border-radius: 6px; font-size: 12px; background: var(--ok-soft); color: var(--ok); }
+.contrast li.bad { background: var(--warn-soft); color: var(--warn); }
 .look-row em { font-style: normal; font-size: 14px; color: var(--sub); }
 .q-lv { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--pri-deep); }
 .setup-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
@@ -176,6 +191,9 @@ div.stat { cursor: default; }
   .editor { padding: 24px; }
   .steps em { font-size: 12px; }
   .feats { grid-template-columns: 1fr 1fr; }
+  .lay { grid-template-columns: repeat(3, 1fr); }
+  .pal { grid-template-columns: repeat(6, 1fr); }
+  .contrast { grid-template-columns: repeat(4, 1fr); }
 }
 @media (min-width: 960px) {
   .main { padding: 24px 24px 56px; }

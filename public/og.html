@@ -14,7 +14,7 @@ p { margin: 0; font-size: 28px; color: #5B6474; }
 <body><div class="c" id="c"></div>
 <script type="module">
 const c = await (await fetch("/academy.json")).json();
-document.body.style.setProperty("--p", c.color || "#1E5BB8");
+document.body.style.setProperty("--p", (c.theme && c.theme.palette && c.theme.palette.primary) || c.color || "#1E5BB8");
 const e = s => String(s || "").replace(/[&<>]/g, x => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[x]));
 document.getElementById("c").innerHTML = `<div class="b">${c.logo ? `<img class="l" src="${e(c.logo)}">` : `<span class="l">${e(c.name[0])}</span>`}${e(c.name)}</div><h1>${e(c.tagline)}</h1><p>${e(c.address || "")}${c.phone ? " · " + e(c.phone) : ""}</p>`;
 document.body.dataset.ready = "1";

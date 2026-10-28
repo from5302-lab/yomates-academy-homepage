@@ -10,11 +10,16 @@
   --sh: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.06);
   --font: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
-/* 학원마다 다른 모양: 글꼴·모서리 (알약 모양은 만들지 않는다: 버튼 48px에 모서리 최대 14px) */
+/* 학원마다 다른 모양 (theme). 색 토큰은 core.js applyTheme이 주 색 하나로 계산해 :root에 넣는다 */
+:root { --sec-y: 52px; --sec-y-d: 72px; --card-py: 20px; --gap: 12px; --h-weight: 800; --h-track: -.02em; --font-h: var(--font); --acc: #C2410C; --acc-soft: #FDF0E8; }
 [data-corner="sharp"] { --r-btn: 4px; --r-card: 6px; --r-tag: 3px; }
 [data-corner="round"] { --r-btn: 14px; --r-card: 22px; --r-tag: 7px; }
-[data-font="serif"] { --font-h: "Noto Serif KR", "AppleMyungjo", "Nanum Myeongjo", "Batang", ui-serif, Georgia, serif; }
-[data-font="serif"] h1, [data-font="serif"] h2, [data-font="serif"] h3, [data-font="serif"] blockquote, [data-font="serif"] .brand { font-family: var(--font-h); }
+[data-density="compact"] { --sec-y: 36px; --sec-y-d: 52px; --card-py: 14px; --gap: 8px; }
+[data-font="serif"] { --font-h: "Noto Serif KR", "AppleMyungjo", "Nanum Myeongjo", "Batang", ui-serif, Georgia, serif; --h-weight: 700; --h-track: -.01em; }
+[data-font="bold"] { --h-weight: 900; --h-track: -.04em; }
+h1, h2, h3, blockquote, .brand { font-family: var(--font-h); }
+h1, h2 { font-weight: var(--h-weight); letter-spacing: var(--h-track); }
+body { background: var(--bg, #fff); }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--bg); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; -webkit-tap-highlight-color: transparent; }

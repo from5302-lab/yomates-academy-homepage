@@ -37,19 +37,63 @@ export const FEAT = [
   ["makeup", "보강 신청", "학부모가 홈페이지에서 보강을 신청해요"]
 ];
 export const on = (c, f) => !!(c && c.features && c.features[f] === true);
+// 데모: 같은 학원 자료를 다른 모양으로
+const DEMO_THEMES = {
+  a: { layout: "split", palette: { primary: "#1E5BB8", accent: "", mode: "white" }, font: "clean", radius: "soft", density: "airy" },
+  b: { layout: "magazine", palette: { primary: "#0F766E", accent: "", mode: "tint" }, font: "serif", radius: "sharp", density: "airy" },
+  c: { layout: "cards", palette: { primary: "#E0622D", accent: "#7C3AED", mode: "deep" }, font: "bold", radius: "round", density: "compact" },
+  d: { layout: "timetable", palette: { primary: "#7C3AED", accent: "", mode: "white" }, font: "clean", radius: "soft", density: "compact" },
+  e: { layout: "center", palette: { primary: "#BE185D", accent: "", mode: "tint" }, font: "serif", radius: "round", density: "airy" },
+  f: { layout: "flow", palette: { primary: "#334155", accent: "#0EA5E9", mode: "white" }, font: "bold", radius: "sharp", density: "compact" }
+};
 const DEMO_PRESET = { full: Object.fromEntries(FEAT.map(f => [f[0], true])), basic: Object.fromEntries(FEAT.map(f => [f[0], false])) };
 
-/* ---------- 학원마다 다른 모양 (사진 없이) ---------- */
-export const LOOKS = {
-  font: [["gothic", "고딕"], ["serif", "명조"]],
-  corner: [["sharp", "각지게"], ["soft", "부드럽게"], ["round", "둥글게"]],
-  layout: [["split", "나란히"], ["center", "가운데"]]
+/* ---------- 학원마다 다른 모양 (사진 없이): theme ---------- */
+// theme: { layout, palette: { primary, accent, mode }, font, radius, density }
+export const THEME = {
+  layout: [["split", "나란히", "글 왼쪽, 요약 오른쪽"], ["center", "가운데", "가운데 큰 제목"], ["timetable", "시간표 먼저", "첫 화면에 반·시간표"], ["magazine", "잡지", "글 중심, 번호 붙은 장"], ["cards", "카드", "색 띠 첫 화면, 카드 묶음"], ["flow", "세로 한 줄", "PC에서도 한 줄로 흐름"]],
+  mode: [["white", "흰 바탕"], ["tint", "옅은 색 바탕"], ["deep", "진한 첫 화면"]],
+  font: [["clean", "단정한 고딕"], ["serif", "명조 제목"], ["bold", "굵은 고딕"]],
+  radius: [["sharp", "각지게"], ["soft", "부드럽게"], ["round", "둥글게"]],
+  density: [["airy", "넉넉하게"], ["compact", "촘촘하게"]]
 };
-export function applyLook(c) {
-  const l = (c && c.look) || {}, h = document.documentElement;
-  h.dataset.font = l.font || "gothic"; h.dataset.corner = l.corner || "soft"; h.dataset.layout = l.layout || "split";
-  applyColor(c && c.color);
+export const THEME_DEFAULT = { layout: "split", palette: { primary: "#1E5BB8", accent: "", mode: "white" }, font: "clean", radius: "soft", density: "airy" };
+export const themeOf = c => {
+  const t = (c && c.theme) || {}, p = t.palette || {};
+  return { ...THEME_DEFAULT, ...t, palette: { ...THEME_DEFAULT.palette, primary: (c && c.color) || THEME_DEFAULT.palette.primary, ...p } };
+};
+export const primaryOf = c => themeOf(c).palette.primary;
+
+/* 색 계산: 주 색 하나에서 팔레트를 만들고 글자 대비 4.5:1을 맞춘다 */
+const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgb2hex = a => "#" + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+function rgb2hsl([r, g, b]) { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; } return [h, s * 100, l * 100]; }
+function hsl2rgb([h, s, l]) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0) * 255, f(8) * 255, f(4) * 255]; }
+const hsl = (h, s, l) => rgb2hex(hsl2rgb([((h % 360) + 360) % 360, s, l]));
+const lum = h => { const c = hex2rgb(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+export const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+function darkenTo(hex, against, ratio) { let [h, s, l] = rgb2hsl(hex2rgb(hex)); let c = hex; while (contrast(c, against) < ratio && l > 5) { l -= 2; c = hsl(h, s, l); } return c; }
+export function palette(t) {
+  const p = t.palette, base = /^#[0-9a-f]{6}$/i.test(p.primary || "") ? p.primary.toUpperCase() : "#1E5BB8";
+  const [h, s0] = rgb2hsl(hex2rgb(base)); const s = Math.max(s0, 18);
+  const bg = p.mode === "tint" ? hsl(h, Math.min(s, 45), 98) : "#FFFFFF";
+  const pri = darkenTo(base, "#FFFFFF", 4.5);               // 흰 글자를 올리는 버튼 색
+  const priDeep = darkenTo(hsl(h, Math.min(s, 70), 26), "#FFFFFF", 8);
+  const ink = hsl(h, Math.min(s, 28), 12), sub = darkenTo(hsl(h, Math.min(s, 14), 42), bg, 4.5);
+  const soft = hsl(h, Math.min(s, 40), 96), line = hsl(h, Math.min(s, 22), 88);
+  const priSoft = hsl(h, Math.min(s, 70), 94), priLine = hsl(h, Math.min(s, 55), 80);
+  const accBase = /^#[0-9a-f]{6}$/i.test(p.accent || "") ? p.accent : hsl(h + 38, Math.min(Math.max(s, 55), 80), 46);
+  const acc = darkenTo(accBase, "#FFFFFF", 4.5); const [ah, as] = rgb2hsl(hex2rgb(acc));
+  return { bg, pri, "pri-deep": priDeep, "pri-soft": priSoft, "pri-line": priLine, acc, "acc-soft": hsl(ah, Math.min(as, 70), 94), ink, sub, soft, line,
+    _check: { "흰 글자/주 색": contrast("#FFFFFF", pri), "본문/바탕": contrast(ink, bg), "흐린 글자/바탕": contrast(sub, bg), "흰 글자/보조 색": contrast("#FFFFFF", acc) } };
 }
+export function applyTheme(c) {
+  const t = themeOf(c), h = document.documentElement, P = palette(t);
+  for (const [k, v] of Object.entries(P)) if (k[0] !== "_") h.style.setProperty("--" + k, v);
+  h.dataset.layout = t.layout; h.dataset.mode = t.palette.mode; h.dataset.font = t.font; h.dataset.corner = t.radius; h.dataset.density = t.density;
+  return P;
+}
+export const applyLook = applyTheme;
 // 로고 그림에서 주 색 뽑기: 너무 밝거나 어둡거나 흐린 색은 빼고 가장 많은 색
 export function colorFromImage(src) {
   return new Promise(res => {
@@ -83,6 +127,8 @@ export async function getConfig(fallback = true) {
     const s = localStorage.getItem("ah:config");
     let c = s ? JSON.parse(s) : await loadDefaults();
     if (!c || !c.name) return null;
+    const tp = new URLSearchParams(location.search).get("theme");
+    if (DEMO_THEMES[tp]) { c = { ...c, theme: DEMO_THEMES[tp] }; localStorage.setItem("ah:config", JSON.stringify(c)); }
     if (DEMO_PRESET[pre]) { c = { ...c, features: { ...DEMO_PRESET[pre] } }; localStorage.setItem("ah:config", JSON.stringify(c)); }
     return c;
   }
@@ -182,8 +228,9 @@ export function rid(n = 20) {
 export const won = n => (Number(n) || 0).toLocaleString("ko-KR") + "원";
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const ymd = d => { const x = new Date(d); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
-export function applyColor(c) {
-  if (c && /^#[0-9a-f]{6}$/i.test(c)) document.documentElement.style.setProperty("--pri", c);
+export function applyColor(c) { // 예전 이름: 학원 정보를 받으면 theme 전체, 색 문자열이면 주 색만
+  if (c && typeof c === "object") return applyTheme(c);
+  if (c && /^#[0-9a-f]{6}$/i.test(c)) applyTheme({ theme: { palette: { primary: c } } });
 }
 export function maskPhone(p) { const d = String(p || "").replace(/\D/g, ""); return d.length >= 10 ? d.slice(0, 3) + "-****-" + d.slice(-4) : p; }
 
