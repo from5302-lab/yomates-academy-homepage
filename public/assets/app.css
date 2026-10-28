@@ -1,0 +1,53 @@
+/* 학원 홈페이지 템플릿 · 공통 토큰 */
+:root {
+  --pri: #1E5BB8;
+  --pri-soft: color-mix(in srgb, var(--pri) 9%, #fff);
+  --pri-line: color-mix(in srgb, var(--pri) 28%, #fff);
+  --pri-deep: color-mix(in srgb, var(--pri) 78%, #000);
+  --ink: #1A1F2B; --sub: #5B6474; --line: #E3E7EE; --soft: #F5F7FA; --bg: #fff;
+  --ok: #0E7F5A; --ok-soft: #E6F5EE; --warn: #B4430E; --warn-soft: #FDF0E8;
+  --r-btn: 10px; --r-card: 14px; --r-tag: 6px;
+  --sh: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.06);
+  --font: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--bg); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; -webkit-tap-highlight-color: transparent; }
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; }
+.pl { white-space: pre-line; }
+p, dd, h1, h2, h3, blockquote, b, em, .fee-n, .ev-n { text-wrap: pretty; }
+.wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+.muted { color: var(--sub); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* 버튼: 네모, 글자 상하좌우 가운데 */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 20px; border-radius: var(--r-btn); border: 1px solid var(--line); background: #fff; color: var(--ink); font: 600 16px/1 var(--font); text-decoration: none; cursor: pointer; white-space: nowrap; transition: background-color .15s, border-color .15s, transform .1s; }
+.btn:active { transform: scale(.98); }
+.btn.pri { background: var(--pri); border-color: var(--pri); color: #fff; }
+.btn.pri:hover { background: var(--pri-deep); }
+.btn.sm { height: 40px; padding: 0 14px; font-size: 14px; }
+.btn.xs { height: 34px; padding: 0 12px; font-size: 13px; }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.tag { display: inline-flex; align-items: center; justify-content: center; height: 24px; padding: 0 8px; border-radius: var(--r-tag); font: 600 12px/1 var(--font); background: var(--soft); color: var(--sub); white-space: nowrap; }
+.tag.pri { background: var(--pri-soft); color: var(--pri-deep); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* 입력: 높이 고정, 글자 위아래 가운데 */
+.field { display: grid; gap: 6px; }
+.field > span { font-size: 14px; font-weight: 600; }
+.in, .sel { width: 100%; height: 48px; padding: 0 14px; border: 1px solid #CDD3DD; border-radius: var(--r-btn); background: #fff; font: 400 16px/normal var(--font); color: var(--ink); }
+.sel { appearance: none; -webkit-appearance: none; padding: 0 44px 0 14px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235B6474' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 16px center; }
+textarea.in { height: auto; min-height: 96px; padding: 12px 14px; line-height: 1.55; resize: vertical; }
+.in:focus, .sel:focus { outline: 2px solid var(--pri-line); outline-offset: 0; border-color: var(--pri); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.55; cursor: pointer; }
+.check input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--pri); flex: none; }
+
+.card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-card); }
+.note { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-btn); background: var(--soft); font-size: 14px; color: var(--sub); }
+.note svg { width: 18px; height: 18px; flex: none; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; align-items: center; min-height: 48px; padding: 0 20px; border-radius: var(--r-btn); background: #1A1F2B; color: #fff; font-size: 15px; z-index: 50; box-shadow: var(--sh); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

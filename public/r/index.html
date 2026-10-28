@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>월말 리포트</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/app.css?v=1">
+<style>
+body { background: var(--soft); }
+.rp { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 14px; }
+.rp-hd { padding: 24px; display: grid; gap: 6px; background: var(--pri); color: #fff; border-radius: var(--r-card); }
+.rp-hd p { font-size: 14px; opacity: .85; font-weight: 600; }
+.rp-hd h1 { font-size: 24px; line-height: 1.35; }
+.rp-hd span { font-size: 14px; opacity: .85; }
+.blk { padding: 20px 24px; display: grid; gap: 10px; }
+.blk h2 { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--pri-deep); }
+.blk h2 i { width: 6px; height: 18px; border-radius: 2px; background: var(--pri); }
+.blk p { font-size: 16px; line-height: 1.7; }
+.nums { display: grid; gap: 8px; }
+.nums div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 16px; border-radius: var(--r-btn); background: var(--pri-soft); }
+.nums span { font-size: 15px; color: var(--sub); }
+.nums b { font-size: 20px; font-variant-numeric: tabular-nums; color: var(--pri-deep); text-align: right; }
+.blk.home { background: #FFF9E8; border-color: #F3E2B0; }
+.miss { min-height: 70dvh; display: grid; place-content: center; text-align: center; gap: 8px; }
+.ft { text-align: center; font-size: 13px; color: var(--sub); }
+</style>
+</head>
+<body>
+<main class="rp" id="app"></main>
+<script type="module">
+import { init, getReport, getConfig, esc, applyColor } from "/assets/core.js?v=1";
+const app = document.getElementById("app");
+await init();
+const t = new URLSearchParams(location.search).get("t") || "";
+let r = null, c = null;
+try { [r, c] = await Promise.all([getReport(t), getConfig()]); } catch (e) {}
+if (c) applyColor(c.color);
+if (!r) {
+  app.innerHTML = `<div class="miss"><h1>리포트를 찾지 못했어요</h1><p class="muted">문자로 받은 주소를 다시 눌러 주세요.</p></div>`;
+} else {
+  const m = +r.month.slice(5, 7);
+  document.title = `${r.student} ${m}월 리포트`;
+  const nums = String(r.numbers || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => { const i = l.search(/[:：]/); return i > 0 ? [l.slice(0, i).trim(), l.slice(i + 1).trim()] : ["", l]; });
+  const blk = (k, t, cls = "") => r[k] ? `<section class="card blk ${cls}"><h2><i></i>${t}</h2><p class="pl">${esc(r[k])}</p></section>` : "";
+  app.innerHTML = `<header class="rp-hd"><p>${esc(r.academy || (c && c.name) || "")}</p><h1>${esc(r.student)} 학생<br>${m}월 리포트</h1><span>${esc(r.cls || "")}</span></header>
+${blk("done", "이번 달 한 것")}
+${nums.length ? `<section class="card blk"><h2><i></i>숫자로 보면</h2><div class="nums">${nums.map(([a, b]) => `<div><span>${esc(a)}</span><b>${esc(b)}</b></div>`).join("")}</div></section>` : ""}
+${blk("good", "잘한 것")}${blk("next", "다음 달 목표")}${blk("home", "집에서 도와주세요", "home")}
+<p class="ft">${c && c.phone ? `궁금한 점은 <a href="tel:${esc(c.phone.replace(/[^0-9+]/g, ""))}">${esc(c.phone)}</a>로 연락 주세요.` : ""}</p>`;
+}
+</script>
+</body>
+</html>

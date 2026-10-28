@@ -1,0 +1,39 @@
+rules_version = '2';
+// 학원 홈페이지 템플릿 보안 규칙
+// - 누구나: 홈페이지 정보 읽기, 상담 신청 쓰기(한 번 쓰면 끝), 리포트는 주소(긴 무작위 아이디)를 아는 사람만 한 건 읽기
+// - 나머지 읽기·쓰기는 관리자 이메일 계정만
+// 관리자 이메일은 academy.json의 admins에 적고 `node tools/apply.mjs`를 돌리면 아래 목록이 바뀐다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in __ADMIN_EMAILS__;
+    }
+    function s(v, n) { return v is string && v.size() <= n; }
+
+    match /site/config {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /inquiries/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'grade', 'phone', 'time', 'memo', 'consent', 'status', 'createdAt'])
+        && s(request.resource.data.name, 20) && request.resource.data.name.size() > 0
+        && s(request.resource.data.grade, 10)
+        && request.resource.data.phone is string && request.resource.data.phone.matches('^01[0-9]{8,9}$')
+        && s(request.resource.data.time, 40)
+        && s(request.resource.data.memo, 300)
+        && request.resource.data.consent == true
+        && request.resource.data.status == '문의'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+    match /reports/{token} {
+      allow get: if token.size() >= 20;
+      allow list, write: if isAdmin();
+    }
+    match /{col}/{id} {
+      allow read, write: if isAdmin() && col in ['schedule', 'students', 'payments'];
+    }
+  }
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>og</title>
+<style>
+html, body { margin: 0; }
+body { width: 1200px; height: 630px; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #fff; overflow: hidden; word-break: keep-all; }
+.c { position: relative; width: 1200px; height: 630px; box-sizing: border-box; padding: 84px 96px; display: flex; flex-direction: column; justify-content: center; gap: 28px;
+  background: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--p) 16%, #fff) 0%, #fff 60%); }
+.c::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 18px; background: var(--p); }
+.b { display: flex; align-items: center; gap: 20px; font-size: 40px; font-weight: 800; color: #1A1F2B; }
+.l { width: 76px; height: 76px; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; background: var(--p); color: #fff; font-size: 40px; object-fit: cover; }
+h1 { margin: 0; font-size: 62px; line-height: 1.3; letter-spacing: -.02em; color: #1A1F2B; white-space: pre-line; }
+p { margin: 0; font-size: 28px; color: #5B6474; }
+</style></head>
+<body><div class="c" id="c"></div>
+<script type="module">
+const c = await (await fetch("/academy.json")).json();
+document.body.style.setProperty("--p", c.color || "#1E5BB8");
+const e = s => String(s || "").replace(/[&<>]/g, x => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[x]));
+document.getElementById("c").innerHTML = `<div class="b">${c.logo ? `<img class="l" src="${e(c.logo)}">` : `<span class="l">${e(c.name[0])}</span>`}${e(c.name)}</div><h1>${e(c.tagline)}</h1><p>${e(c.address || "")}${c.phone ? " · " + e(c.phone) : ""}</p>`;
+document.body.dataset.ready = "1";
+</script></body></html>
