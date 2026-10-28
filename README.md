@@ -4,13 +4,16 @@
 빌드가 없는 정적 사이트라 Firebase Hosting(무료)과 Firestore, 구글 로그인만 있으면 돌아요.
 
 - 데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app · 관리자 화면 https://yomates-academy-demo.web.app/admin
+- 기본 기능만 켠 데모: https://yomates-academy-demo.web.app/?demo=basic · https://yomates-academy-demo.web.app/admin?demo=basic
+- 틀은 하나이고 기능을 켜고 꺼요: 월말 리포트, 원비 납부 표, 원비 공개, 선생님 소개, 후기, 공지 띠, 레벨테스트, 보강 신청 (`academy.json`의 `features`)
+- 학원마다 모양이 달라요: 로고에서 뽑은 색, 글꼴, 모서리, 첫 화면 배치 (`look`). 사진은 넣지 않아요
 - 세팅 순서: [SKILL.md](SKILL.md) (요메이트 스킬 `학원-홈페이지-템플릿`)
 
 ## 들어 있는 것
 
 | 주소 | 내용 |
 |---|---|
-| `/` | 학원 소개, 반·시간표, 원비(교육청 게시 금액), 선생님, 후기, 오시는 길, 입회·상담 신청, 공지 띠 |
+| `/` | 학원 소개, 반·시간표, 오시는 길, 입회·상담 신청 + 켠 기능(원비, 레벨테스트, 선생님, 후기, 보강 신청, 공지 띠) |
 | `/admin` | 처음 설정, 한눈에(일정·상담·리포트·원비), 상담, 일정, 학생, 리포트, 원비, 홈페이지 정보 |
 | `/r/?t=…` | 학부모가 여는 월말 리포트 |
 

@@ -6,13 +6,21 @@ description: 원장님 학원 홈페이지와 관리자 화면을 템플릿으�
 # 학원 홈페이지 템플릿
 
 템플릿 저장소: https://github.com/from5302-lab/yomates-academy-homepage
-데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app
+데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app (기능 전부 켬) · https://yomates-academy-demo.web.app/?demo=basic (기본만)
 
 **원칙:** 원장님이 할 일은 두 가지뿐이다.
 1. 구글 로그인 (Firebase 로그인, 관리자 화면 로그인)
 2. 처음 설정 화면에서 학원 정보가 맞는지 보고 '다음'을 누르기
 
 코드는 고치지 않는다. 학원마다 다른 것은 모두 `academy.json` 한 파일과 관리자 화면의 '홈페이지 정보' 탭에 들어간다.
+
+**틀은 하나, 기능은 켜고 끈다.**
+- 늘 켜짐: 학원 소개, 반·시간표, 오시는 길, 입회·상담 신청, 관리자 한눈에·일정, 처음 설정
+- 켜고 끄는 기능(`features`): `report` 월말 리포트, `pay` 원비 납부 표, `fees` 원비 공개, `teachers` 선생님 소개, `reviews` 후기, `notice` 공지 띠, `leveltest` 레벨테스트, `makeup` 보강 신청
+- 끈 기능은 홈페이지 메뉴와 관리자 메뉴에서 사라지고, 보안 규칙이 그 자료(리포트, 원비, 보강 신청, 레벨테스트 결과)를 막는다.
+- 원장님은 처음 설정 2단계 '기능'에서 체크로 고르고, 나중에 '홈페이지 정보' 탭에서 언제든 바꾼다.
+
+**학원마다 다른 모양(사진은 넣지 않는다).** 로고에서 뽑은 주 색(로고를 올리면 저절로 뽑힌다), 글꼴(`gothic`·`serif`), 모서리(`sharp`·`soft`·`round`), 첫 화면 배치(`split`·`center`)로 나눈다. `look`에 적는다.
 
 다 끝나면 원장님은 아래를 갖는다.
 - `https://<프로젝트아이디>.web.app`: 학원 소개, 반·시간표, 원비, 선생님, 후기, 오시는 길, 입회·상담 신청, 위쪽 공지 띠
@@ -39,6 +47,8 @@ description: 원장님 학원 홈페이지와 관리자 화면을 템플릿으�
 ## 1. 원장님께 먼저 확인할 것 (한 번에)
 
 - 관리자로 쓸 구글 이메일 (여럿이면 모두)
+- 켤 기능: 월말 리포트, 원비 납부 표, 원비 공개, 선생님 소개, 후기, 공지 띠, 레벨테스트, 보강 신청 중 무엇을 쓸지
+- 레벨테스트를 켜면 쓰고 있는 진단 문항과 점수별 추천 반
 - 홈페이지 주소로 쓸 영어 이름 (예: `hanbit-english` → `https://hanbit-english.web.app`)
 
 ## 2. 템플릿 받기
@@ -73,7 +83,9 @@ https://github.com/from5302-lab/yomates-firebase-skill 의 순서를 따른다. 
 | tagline | 한 줄 소개. 두 줄이면 `\n` |
 | intro | 학원 소개 몇 줄 |
 | logo | 비워 두면 이름 첫 글자. 그림은 관리자 화면에서 올린다 |
-| color | 주 색 `#RRGGBB` (간판·로고 색) |
+| color | 주 색 `#RRGGBB` (간판·로고 색). 로고 파일이 있으면 관리자 화면에서 로고를 올릴 때 저절로 뽑힌다 |
+| look | `{ "font": "gothic", "corner": "soft", "layout": "split" }`. 옆 학원과 겹치지 않게 고른다 |
+| features | 켤 기능만 `true`. 원장님께 무엇을 쓸지 먼저 묻는다 |
 | address, parking, phone | 주소, 주차, 대표 번호 |
 | regNo | 학원·교습소 등록번호 문구 |
 | consultSlots | 상담 가능 시간 목록 |
@@ -82,6 +94,8 @@ https://github.com/from5302-lab/yomates-firebase-skill 의 순서를 따른다. 
 | teachers | name, role, line |
 | reviews | who(가린 이름), text. 없으면 `[]` |
 | notice | text, until(`YYYY-MM-DD`, 지나면 저절로 내려감). 없으면 `{}` |
+| levelQuestions | 레벨테스트를 켰을 때 문항: q(문제), o1~o4(보기), a(정답 번호 1~4). 원장님이 쓰는 진단 문항을 그대로 옮긴다 |
+| levelResults | 점수 구간: min(이 점수부터), name, cls(추천 반), text |
 | admins | 1단계에서 받은 관리자 구글 이메일 |
 
 장부에 없는 값은 지어내지 않는다. 비워 두고 원장님이 처음 설정 화면에서 채우게 한다.
@@ -126,8 +140,10 @@ https://github.com/from5302-lab/yomates-solapi-skill 이 세팅돼 있어야 한
 
 ## 보안 규칙 요약 (firestore.rules)
 
-- 누구나: 홈페이지 정보 읽기, 상담 신청 쓰기(칸·길이·동의 확인, 한 번 쓰면 못 고침), 리포트는 20자 이상 무작위 주소를 아는 사람만 그 한 건 읽기
-- 그 밖의 읽기·쓰기(상담 목록, 일정, 학생, 원비, 리포트 목록)는 `admins` 이메일 계정만
+- 누구나: 홈페이지 정보 읽기, 상담 신청 쓰기(칸·길이·동의 확인, 한 번 쓰면 못 고침)
+- 켠 기능만: 보강 신청 쓰기(`makeup`), 20자 이상 무작위 주소로 리포트 한 건 읽기(`report`), 레벨테스트 결과를 붙인 상담 신청(`leveltest`)
+- 그 밖의 읽기·쓰기(상담 목록, 일정, 학생, 원비, 리포트 목록, 보강 목록)는 `admins` 이메일 계정만. 끈 기능의 자료는 관리자도 못 읽고 못 쓴다
+- 기능을 켜고 끄는 것은 Firestore `site/config`의 `features`를 보고 정해진다. 처음 설정을 저장하기 전에는 모든 선택 기능이 꺼진 것으로 본다
 
 ## 막힐 때
 

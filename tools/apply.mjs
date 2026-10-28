@@ -17,6 +17,11 @@ const admins = c.admins.map(e => String(e).trim().toLowerCase()).filter(e => /^[
 if (!admins.length) { console.error("admins에 관리자 구글 이메일을 한 개 이상 적어 주세요."); process.exit(1); }
 for (const k of c.classes) if (k.fee != null && !Number.isFinite(+k.fee)) { console.error(`원비는 숫자(원)로: ${k.name}`); process.exit(1); }
 
+const FEATS = ["report", "pay", "fees", "teachers", "reviews", "notice", "leveltest", "makeup"];
+const bad = Object.keys(c.features || {}).filter(k => !FEATS.includes(k));
+if (bad.length) { console.error("features에 모르는 기능: " + bad.join(", ") + " (쓸 수 있는 것: " + FEATS.join(", ") + ")"); process.exit(1); }
+c.features = Object.fromEntries(FEATS.map(k => [k, (c.features || {})[k] === true]));
+if (c.features.leveltest) for (const [i, q] of (c.levelQuestions || []).entries()) if (!(+q.a >= 1 && +q.a <= 4) || !q["o" + q.a]) { console.error(`레벨테스트 ${i + 1}번 정답 번호가 보기와 맞지 않아요`); process.exit(1); }
 const pub = { ...c }; delete pub.admins; delete pub._help;
 fs.writeFileSync(path.join(root, "public/academy.json"), JSON.stringify(pub, null, 2) + "\n");
 
@@ -41,5 +46,5 @@ const meta = `<!-- meta:start (tools/apply.mjs가 academy.json 값으로 채운�
 <!-- meta:end -->`;
 const ix = path.join(root, "public/index.html");
 fs.writeFileSync(ix, fs.readFileSync(ix, "utf8").replace(/<!-- meta:start[\s\S]*?<!-- meta:end -->/, meta));
-console.log(`반영했어요: ${c.name} · 반 ${c.classes.length}개 · 관리자 ${admins.length}명`);
+console.log(`반영했어요: ${c.name} · 반 ${c.classes.length}개 · 관리자 ${admins.length}명 · 켠 기능 ${FEATS.filter(k => c.features[k]).join(", ") || "기본만"}`);
 console.log("다음: node tools/shots.mjs 로 og.png(1200x630)와 apple-touch-icon.png(180x180)를 만든다 (playwright 필요, 없으면 건너뛰어도 됨)");

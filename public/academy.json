@@ -4,6 +4,21 @@
   "intro": "초등 3학년부터 중등 3학년까지\n반마다 8명까지만 받습니다.\n\n수업이 끝나면 오늘 읽은 쪽수와 단어 시험 점수를\n그날 저녁 문자로 보내 드립니다.",
   "logo": "",
   "color": "#1E5BB8",
+  "look": {
+    "font": "gothic",
+    "corner": "soft",
+    "layout": "split"
+  },
+  "features": {
+    "report": true,
+    "pay": true,
+    "fees": true,
+    "teachers": true,
+    "reviews": true,
+    "notice": true,
+    "leveltest": true,
+    "makeup": true
+  },
   "address": "제주시 한빛로 00, 2층 (가짜 주소)",
   "parking": "건물 뒤 공영주차장,\n상담 오시면 1시간 무료",
   "phone": "064-000-0000",
@@ -69,5 +84,91 @@
   "notice": {
     "text": "11월 초등 리딩 A반 2자리 남았어요.",
     "until": "2026-11-15"
-  }
+  },
+  "levelQuestions": [
+    {
+      "q": "빈칸에 알맞은 말은?\nI ___ a student.",
+      "o1": "am",
+      "o2": "is",
+      "o3": "are",
+      "o4": "be",
+      "a": 1
+    },
+    {
+      "q": "'apple'의 복수형은?",
+      "o1": "apple",
+      "o2": "apples",
+      "o3": "applees",
+      "o4": "applies",
+      "a": 2
+    },
+    {
+      "q": "빈칸에 알맞은 말은?\nShe ___ to school every day.",
+      "o1": "go",
+      "o2": "going",
+      "o3": "goes",
+      "o4": "gone",
+      "a": 3
+    },
+    {
+      "q": "'어제'를 영어로 하면?",
+      "o1": "tomorrow",
+      "o2": "today",
+      "o3": "tonight",
+      "o4": "yesterday",
+      "a": 4
+    },
+    {
+      "q": "빈칸에 알맞은 말은?\nThere ___ two cats on the bed.",
+      "o1": "is",
+      "o2": "are",
+      "o3": "am",
+      "o4": "be",
+      "a": 2
+    },
+    {
+      "q": "뜻이 다른 하나는?",
+      "o1": "big",
+      "o2": "large",
+      "o3": "huge",
+      "o4": "tiny",
+      "a": 4
+    },
+    {
+      "q": "빈칸에 알맞은 말은?\nI have lived here ___ 2020.",
+      "o1": "for",
+      "o2": "since",
+      "o3": "at",
+      "o4": "during",
+      "a": 2
+    },
+    {
+      "q": "문장이 맞는 것은?",
+      "o1": "He don't like milk.",
+      "o2": "He doesn't likes milk.",
+      "o3": "He doesn't like milk.",
+      "o4": "He not like milk.",
+      "a": 3
+    }
+  ],
+  "levelResults": [
+    {
+      "min": 0,
+      "name": "Level 1",
+      "cls": "초등 리딩 A",
+      "text": "기본 문장부터\n소리 내어 읽으며 시작해요."
+    },
+    {
+      "min": 4,
+      "name": "Level 2",
+      "cls": "초등 리딩 B",
+      "text": "짧은 원서를 끝까지 읽으며\n문법 감각을 다져요."
+    },
+    {
+      "min": 7,
+      "name": "Level 3",
+      "cls": "중등 내신",
+      "text": "시제와 문장 구조를\n서술형까지 넓혀요."
+    }
+  ]
 }

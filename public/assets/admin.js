@@ -1,9 +1,10 @@
 import * as D from "./core.js";
-const { esc, won, ymd, rid, maskPhone } = D;
+const { esc, won, ymd, rid, maskPhone, on } = D;
 
 const S = { user: null, cfg: null, tab: "home", data: {}, month: ymd(Date.now()).slice(0, 7), qf: "전체", step: 0, edit: null, studentEdit: null };
 const app = document.getElementById("app");
-const TABS = [["home", "한눈에"], ["inq", "상담"], ["sch", "일정"], ["stu", "학생"], ["rep", "리포트"], ["pay", "원비"], ["site", "홈페이지 정보"]];
+const TABS = [["home", "한눈에"], ["inq", "상담"], ["sch", "일정"], ["stu", "학생", c => on(c, "report") || on(c, "pay")], ["rep", "리포트", c => on(c, "report")], ["pay", "원비", c => on(c, "pay")], ["site", "홈페이지 정보"]];
+const tabsOn = () => TABS.filter(t => !t[2] || t[2](S.cfg));
 const STATUS = ["문의", "예약", "등록"];
 const TYPES = ["상담", "보강", "시험", "그 밖"];
 const ic = {
@@ -35,12 +36,18 @@ D.onAuth(async u => {
   }
   if (S.cfg && new URLSearchParams(location.search).has("setup")) S.cfg._setup = true;
   if (!S.cfg || !S.cfg.name || S.cfg._setup) { S.cfg = S.cfg && S.cfg.name ? S.cfg : await D.loadDefaults(); S.cfg._setup = true; return renderSetup(); }
-  D.applyColor(S.cfg.color);
+  D.applyLook(S.cfg);
   render();
 });
 
+// 끈 기능의 자료는 보안 규칙이 막으니 읽지도 않는다
 async function loadAll() {
-  const cols = ["inquiries", "schedule", "students", "reports", "payments"];
+  const c = S.cfg || {};
+  ["inquiries", "schedule", "students", "reports", "payments", "makeups"].forEach(k => S.data[k] = []);
+  const cols = ["inquiries", "schedule", "students"];
+  if (on(c, "report")) cols.push("reports");
+  if (on(c, "pay")) cols.push("payments");
+  if (on(c, "makeup")) cols.push("makeups");
   const r = await Promise.all(cols.map(c => D.list(c)));
   cols.forEach((c, i) => S.data[c] = r[i]);
 }
@@ -70,13 +77,14 @@ function render() {
 <a class="brand" href="/" target="_blank" rel="noopener">${c.logo ? `<img class="logo" src="${esc(c.logo)}" alt="">` : `<span class="logo logo-t">${esc(c.name[0])}</span>`}<span>${esc(c.name)}</span></a>
 <a class="btn sm ghost hide-s" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지</a>
 <button class="btn sm ghost" id="out" aria-label="로그아웃">${ic.out}<span class="hide-s">로그아웃</span></button></div>
-<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" class="tab${S.tab === k ? " on" : ""}" data-tab="${k}">${t}</button>`).join("")}</nav></header>
+<nav class="tabs" role="tablist">${tabsOn().map(([k, t]) => `<button role="tab" class="tab${S.tab === k ? " on" : ""}" data-tab="${k}">${t}</button>`).join("")}</nav></header>
 ${D.isDemo() ? `<div class="demo-bar pl">데모예요. 가짜 학원·가짜 학생 자료예요.
 바꾼 것은 이 브라우저에만 남아요.</div>` : ""}
 <main class="main" id="main"></main>`;
   document.getElementById("out").onclick = () => D.signOut();
   app.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { S.tab = b.dataset.tab; S.edit = null; render(); scrollTo(0, 0); });
   const on = app.querySelector(".tab.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
+  if (!tabsOn().some(t => t[0] === S.tab)) S.tab = "home";
   ({ home, inq, sch, stu, rep, pay, site })[S.tab](document.getElementById("main"));
 }
 
@@ -90,20 +98,23 @@ function home(m) {
   const reps = S.data.reports.filter(r => r.month === S.month);
   const sent = reps.filter(r => r.sentAt).length;
   const unpaid = st.filter(s => !payOf(s.id, S.month).paid);
-  m.innerHTML = `<div class="stats">
-${stat("오늘 일정", todayN + "건", "sch")}${stat("새 상담 문의", newQ.length + "건", "inq", newQ.length ? "pri" : "")}
-${stat(mLabel(S.month) + " 리포트 보냄", `${sent} / ${st.length}명`, "rep")}${stat(mLabel(S.month) + " 원비 미납", unpaid.length + "명", "pay", unpaid.length ? "warn" : "")}</div>
+  const C = S.cfg, mk = S.data.makeups.filter(x => x.status === "신청");
+  const stats = [stat("오늘 일정", todayN + "건", "sch"), stat("새 상담 문의", newQ.length + "건", "inq", newQ.length ? "pri" : ""),
+    on(C, "makeup") ? stat("보강 신청", mk.length + "건", "sch", mk.length ? "pri" : "") : "",
+    on(C, "report") ? stat(mLabel(S.month) + " 리포트 보냄", `${sent} / ${st.length}명`, "rep") : "",
+    on(C, "pay") ? stat(mLabel(S.month) + " 원비 미납", unpaid.length + "명", "pay", unpaid.length ? "warn" : "") : ""].filter(Boolean);
+  m.innerHTML = `<div class="stats n${stats.length}">${stats.join("")}</div>
 <div class="cols">
 <section class="card panel"><div class="ph"><h2>이번 주 일정</h2><button class="btn xs" data-go="sch">일정 넣기</button></div>${dayList(ev, t)}</section>
 <div class="stack">
 <section class="card panel"><div class="ph"><h2>상담 신청</h2><button class="btn xs" data-go="inq">전체 보기</button></div>
 <div class="funnel">${STATUS.map(s => `<div><b>${inq.filter(q => q.status === s).length}</b><span>${s}</span></div>`).join("")}</div>
 ${inq.filter(q => q.status !== "등록").sort((a, b) => b.createdAt - a.createdAt).slice(0, 3).map(q => qRow(q, true)).join("") || `<p class="empty-t">새 신청이 없어요.</p>`}</section>
-<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 리포트</h2><button class="btn xs" data-go="rep">쓰러 가기</button></div>
-${bar(sent, st.length, "보냄")}<p class="small muted">${st.length - reps.length}명 안 씀 · ${reps.length - sent}명 써 두고 안 보냄</p></section>
-<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 원비</h2><button class="btn xs" data-go="pay">표 보기</button></div>
+${on(C, "report") ? `<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 리포트</h2><button class="btn xs" data-go="rep">쓰러 가기</button></div>
+${bar(sent, st.length, "보냄")}<p class="small muted">${st.length - reps.length}명 안 씀 · ${reps.length - sent}명 써 두고 안 보냄</p></section>` : ""}
+${on(C, "pay") ? `<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 원비</h2><button class="btn xs" data-go="pay">표 보기</button></div>
 ${bar(st.length - unpaid.length, st.length, "납부")}
-${unpaid.length ? `<ul class="mini">${unpaid.map(s => `<li><span>${esc(s.name)} <em class="muted">${esc(s.cls)}</em></span><b class="num">${won(s.fee)}</b></li>`).join("")}</ul>` : `<p class="empty-t">모두 냈어요.</p>`}</section>
+${unpaid.length ? `<ul class="mini">${unpaid.map(s => `<li><span>${esc(s.name)} <em class="muted">${esc(s.cls)}</em></span><b class="num">${won(s.fee)}</b></li>`).join("")}</ul>` : `<p class="empty-t">모두 냈어요.</p>`}</section>` : ""}
 </div></div>`;
   m.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { S.tab = b.dataset.go; render(); scrollTo(0, 0); });
   bindQ(m);
@@ -126,6 +137,7 @@ ${l.map(e => `<div class="ev"><span class="ev-t num">${esc(e.time || "")}</span>
 function qRow(q, compact) {
   const d = q.createdAt ? new Date(q.createdAt) : null;
   return `<div class="q${compact ? " compact" : ""}"><div class="q-top"><b>${esc(q.name)}</b><span class="tag">${esc(q.grade)}</span><span class="q-d muted">${d ? `${d.getMonth() + 1}/${d.getDate()} 신청` : ""}</span></div>
+${q.level ? `<div class="q-lv"><span class="tag pri">레벨테스트</span><span>${esc(q.level)}</span></div>` : ""}
 <div class="q-meta"><a href="tel:${esc(q.phone)}">${esc(fmtPhone(q.phone))}</a><span class="muted">${esc(q.time)}</span></div>
 ${q.memo && !compact ? `<p class="q-memo">${esc(q.memo)}</p>` : ""}
 <div class="seg" role="group" aria-label="상태">${STATUS.map(s => `<button class="${q.status === s ? "on" : ""}" data-q="${q.id}" data-s="${s}">${s}</button>`).join("")}</div>
@@ -164,7 +176,13 @@ function bindQ(m) {
 function sch(m) {
   const t = today();
   const ev = upcoming(t, ymd(Date.now() + 60 * 864e5));
-  m.innerHTML = `<div class="cols"><section class="card panel"><div class="ph"><h2>일정 넣기</h2></div>
+  const mk = on(S.cfg, "makeup") ? S.data.makeups.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) : null;
+  const mkHtml = mk ? `<section class="card panel"><div class="ph"><h2>보강 신청 <span class="muted">${mk.filter(x => x.status === "신청").length}건</span></h2></div>
+${mk.map(x => `<div class="q"><div class="q-top"><b>${esc(x.name)}</b><span class="tag">${esc(x.cls)}</span>${x.status === "확정" ? `<span class="tag ok">확정</span>` : `<span class="tag pri">신청</span>`}</div>
+<div class="q-meta"><span>빠진 날 ${esc(x.missed)}</span><span class="muted">원하는 때 ${esc(x.want)}</span><a href="tel:${esc(x.phone)}">${esc(fmtPhone(x.phone))}</a></div>
+${x.status === "확정" ? `<p class="small muted">보강 ${esc(x.when || "")} 일정에 넣었어요.</p>` : `<div class="q-when"><input class="in" type="datetime-local" data-mk="${x.id}" aria-label="보강 시각"><span class="muted small">보강 시각을 고르면 일정에 들어가요</span></div>`}
+<div class="q-del"><button class="btn xs ghost" data-mkdel="${x.id}">신청 지우기</button></div></div>`).join("") || `<p class="empty-t">보강 신청이 없어요.</p>`}</section>` : "";
+  m.innerHTML = `${mkHtml}<div class="cols"><section class="card panel"><div class="ph"><h2>일정 넣기</h2></div>
 <form class="grid-form" id="ef"><label class="field"><span>종류</span><select class="sel" name="type">${TYPES.map(x => `<option>${x}</option>`).join("")}</select></label>
 <label class="field"><span>날짜</span><input class="in" type="date" name="date" value="${t}" required></label>
 <label class="field"><span>시간</span><input class="in" type="time" name="time" value="15:00"></label>
@@ -173,6 +191,12 @@ function sch(m) {
 <section class="card panel"><div class="ph"><h2>앞으로 60일</h2></div>${dayList(ev, t)}</section></div>`;
   document.getElementById("ef").onsubmit = async e => { e.preventDefault(); const v = Object.fromEntries(new FormData(e.target)); if (!v.title.trim()) return; await D.put("schedule", rid(12), v); await loadAll(); toast("일정에 넣었어요"); sch(m); };
   m.querySelectorAll("[data-delev]").forEach(b => b.onclick = async () => { await D.del("schedule", b.dataset.delev); await loadAll(); sch(m); });
+  m.querySelectorAll("[data-mk]").forEach(i => i.onchange = async () => {
+    const x = S.data.makeups.find(y => y.id === i.dataset.mk); const v = i.value.replace("T", " "); if (!v) return;
+    await D.put("schedule", "mk_" + x.id, { type: "보강", date: v.slice(0, 10), time: v.slice(11, 16), title: `${x.cls} · ${x.name}` });
+    await D.put("makeups", x.id, { status: "확정", when: v }); await loadAll(); toast("보강 일정에 넣었어요"); sch(m);
+  });
+  m.querySelectorAll("[data-mkdel]").forEach(b => b.onclick = async () => { if (!confirm("이 보강 신청을 지울까요?")) return; await D.del("makeups", b.dataset.mkdel); await loadAll(); sch(m); });
 }
 
 /* ---------- 학생 ---------- */
@@ -297,9 +321,18 @@ ${st.map(s => { const p = payOf(s.id, S.month); return `<tr><td><b>${esc(s.name)
 }
 
 /* ---------- 홈페이지 정보 (처음 설정과 같은 칸) ---------- */
-const STEPS = [["학원", ["name", "tagline", "intro", "logo", "color"]], ["위치·연락", ["address", "parking", "phone", "regNo"]], ["반·원비", ["classes", "feeNote"]], ["선생님·상담", ["teachers", "consultSlots"]], ["확인", []]];
+// 처음 설정 단계: 켠 기능에 따라 칸이 달라진다
+function steps() {
+  const c = S.cfg, f = k => on(c, k);
+  const extra = [f("teachers") && "teachers", "consultSlots", f("reviews") && "reviews", f("notice") && "notice", f("leveltest") && "levelQuestions", f("leveltest") && "levelResults"].filter(Boolean);
+  return [["학원", ["name", "tagline", "intro", "logo", "color", "look"]], ["기능", ["features"]], ["위치·연락", ["address", "parking", "phone", "regNo"]],
+    ["반·원비", ["classes", f("fees") && "feeNote"].filter(Boolean)], [f("teachers") ? "선생님·상담" : "상담 시간", extra], ["확인", []]];
+}
 const COLORS = ["#1E5BB8", "#0F766E", "#7C3AED", "#C2410C", "#BE185D", "#1F2937"];
 const FIELDS = {
+  features: ["기능 켜고 끄기", "features"], look: ["모양", "look"],
+  levelQuestions: ["레벨테스트 문항", "rows", [["q", "문제", "", "ta"], ["o1", "보기 1"], ["o2", "보기 2"], ["o3", "보기 3"], ["o4", "보기 4"], ["a", "정답 번호", "1", "num"]], "문항"],
+  levelResults: ["레벨테스트 결과", "rows", [["min", "이 점수부터", "0", "num"], ["name", "단계 이름", "Level 1"], ["cls", "추천 반"], ["text", "한 줄 설명", "", "ta"]], "결과"],
   name: ["학원 이름", "in"], tagline: ["한 줄 소개", "ta", "줄을 나눌 곳에서 엔터를 눌러요"], intro: ["학원 소개", "ta"], logo: ["로고", "logo"], color: ["주 색", "color"],
   address: ["주소", "in"], parking: ["주차", "ta"], phone: ["대표 번호", "in"], regNo: ["교습소·학원 등록번호", "in", "예: 교습소 등록 제0000호"],
   feeNote: ["원비 안내 한 줄", "in", "예: 교재비는 실비로 따로 받습니다"],
@@ -311,6 +344,9 @@ const FIELDS = {
 };
 function fieldHtml(k) {
   const [label, type, a, b] = FIELDS[k]; const c = S.cfg; const v = c[k];
+  if (type === "features") { const F = c.features || {}; return `<div class="field"><span>${label}</span><p class="small muted pl">학원 소개, 반·시간표, 오시는 길, 상담 신청,
+한눈에·일정은 늘 켜져 있어요.</p><div class="feats">${D.FEAT.map(([fk, fl, fd]) => `<label class="feat${F[fk] ? " on" : ""}"><input type="checkbox" data-feat="${fk}"${F[fk] ? " checked" : ""}><span><b>${fl}</b><em>${fd}</em></span></label>`).join("")}</div></div>`; }
+  if (type === "look") { const L = c.look || {}; return `<div class="field"><span>${label}</span><p class="small muted">학원마다 다르게 보이도록 고르는 칸이에요. 사진은 넣지 않아요.</p>${Object.entries(D.LOOKS).map(([lk, opts]) => `<div class="look-row"><em>${{ font: "글꼴", corner: "모서리", layout: "첫 화면" }[lk]}</em><div class="seg">${opts.map(([v, t]) => `<button type="button" class="${(L[lk] || opts[0][0]) === v ? "on" : ""}" data-look="${lk}" data-v="${v}">${t}</button>`).join("")}</div></div>`).join("")}</div>`; }
   if (type === "in") return `<label class="field"><span>${label}</span><input class="in" data-k="${k}" value="${esc(v || "")}"${a ? ` placeholder="${esc(a)}"` : ""}></label>`;
   if (type === "ta") return `<label class="field"><span>${label}</span><textarea class="in" data-k="${k}" rows="3"${a ? ` placeholder="${esc(a)}"` : ""}>${esc(v || "")}</textarea></label>`;
   if (type === "color") return `<div class="field"><span>${label}</span><div class="swatches">${COLORS.map(x => `<button type="button" class="sw${(v || "").toLowerCase() === x.toLowerCase() ? " on" : ""}" style="background:${x}" data-color="${x}" aria-label="${x}"></button>`).join("")}<label class="sw-pick"><input type="color" data-k="color" value="${esc(v || "#1E5BB8")}"><span>직접 고르기</span></label></div></div>`;
@@ -327,10 +363,12 @@ function bindFields(root, rerender) {
   root.querySelectorAll("[data-l]").forEach(i => i.oninput = () => { c[i.dataset.l][+i.dataset.i] = i.value; });
   root.querySelectorAll("[data-ladd]").forEach(b => b.onclick = () => { (c[b.dataset.ladd] = c[b.dataset.ladd] || []).push(""); rerender(); });
   root.querySelectorAll("[data-ldel]").forEach(b => b.onclick = () => { c[b.dataset.ldel].splice(+b.dataset.i, 1); rerender(); });
-  root.querySelectorAll("[data-r]").forEach(i => i.oninput = () => { const v = i.dataset.num ? +i.value.replace(/\D/g, "") || "" : i.value; c[i.dataset.r][+i.dataset.i][i.dataset.f] = v; });
+  root.querySelectorAll("[data-r]").forEach(i => i.oninput = () => { const v = i.dataset.num ? (i.value.replace(/\D/g, "") === "" ? "" : +i.value.replace(/\D/g, "")) : i.value; c[i.dataset.r][+i.dataset.i][i.dataset.f] = v; });
   root.querySelectorAll("[data-radd]").forEach(b => b.onclick = () => { (c[b.dataset.radd] = c[b.dataset.radd] || []).push({}); rerender(); });
   root.querySelectorAll("[data-rdel]").forEach(b => b.onclick = () => { c[b.dataset.rdel].splice(+b.dataset.i, 1); rerender(); });
-  const lf = root.querySelector("#logoF"); if (lf) lf.onchange = async () => { const f = lf.files[0]; if (!f) return; c.logo = await shrink(f, 256); rerender(); };
+  root.querySelectorAll("[data-feat]").forEach(i => i.onchange = () => { c.features = { ...(c.features || {}), [i.dataset.feat]: i.checked }; rerender(); });
+  root.querySelectorAll("[data-look]").forEach(b => b.onclick = () => { c.look = { ...(c.look || {}), [b.dataset.look]: b.dataset.v }; D.applyLook(c); rerender(); });
+  const lf = root.querySelector("#logoF"); if (lf) lf.onchange = async () => { const f = lf.files[0]; if (!f) return; c.logo = await shrink(f, 256); const col = await D.colorFromImage(c.logo); if (col) { c.color = col; D.applyColor(col); toast("로고에서 주 색을 뽑았어요"); } rerender(); };
   const lx = root.querySelector("#logoX"); if (lx) lx.onclick = () => { c.logo = ""; rerender(); };
 }
 function shrink(file, px) {
@@ -345,24 +383,25 @@ function bindJson(rerender) {
   document.getElementById("jOut").onclick = () => { const c = { ...S.cfg }; delete c._setup; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(c, null, 2)], { type: "application/json" })); a.download = "academy.json"; a.click(); };
 }
 function site(m) {
-  const keys = ["name", "tagline", "intro", "logo", "color", "notice", "address", "parking", "phone", "regNo", "classes", "feeNote", "teachers", "consultSlots", "reviews"];
   const draw = () => {
+    const f = k => on(S.cfg, k);
+    const keys = ["features", "name", "tagline", "intro", "logo", "color", "look", f("notice") && "notice", "address", "parking", "phone", "regNo", "classes", f("fees") && "feeNote", f("teachers") && "teachers", "consultSlots", f("reviews") && "reviews", f("leveltest") && "levelQuestions", f("leveltest") && "levelResults"].filter(Boolean);
     m.innerHTML = `<div class="toolbar">${jsonTools()}<div class="tb-r"><a class="btn sm" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지 보기</a></div></div>
 <div class="card panel editor">${keys.map(fieldHtml).join("")}</div>
 <div class="savebar"><button class="btn pri" id="save">홈페이지에 저장</button></div>`;
     bindFields(m, draw); bindJson(draw);
-    document.getElementById("save").onclick = async () => { await D.saveConfig(S.cfg); toast("홈페이지에 저장했어요"); };
+    document.getElementById("save").onclick = async () => { await D.saveConfig(S.cfg); await loadAll(); toast("홈페이지에 저장했어요"); render(); };
   };
   draw();
 }
 
 /* ---------- 처음 설정 ---------- */
 function renderSetup() {
-  D.applyColor(S.cfg.color);
+  D.applyLook(S.cfg);
   const draw = () => {
-    const [title, keys] = STEPS[S.step]; const last = S.step === STEPS.length - 1; const c = S.cfg;
+    const STEPS = steps(); const [title, keys] = STEPS[S.step]; const last = S.step === STEPS.length - 1; const c = S.cfg;
     app.innerHTML = `<div class="setup"><div class="setup-hd"><p class="eyebrow">처음 설정 · ${S.step + 1}/${STEPS.length}</p><h1>${title}</h1>
-<ol class="steps">${STEPS.map((s, i) => `<li class="${i < S.step ? "done" : i === S.step ? "on" : ""}"><span>${i + 1}</span><em>${s[0]}</em></li>`).join("")}</ol></div>
+<ol class="steps">${STEPS.map((s, i) => `<li class="${i < S.step ? "done" : i === S.step ? "on" : ""}"><span>${i + 1}</span><em>${["학원", "기능", "위치", "원비", "상담", "확인"][i]}</em></li>`).join("")}</ol></div>
 ${S.step === 0 ? `<div class="note pl">요메이트가 장부 값으로 미리 채워 두었으면
 맞는지 보고 다음만 누르면 돼요.</div>${jsonTools()}` : ""}
 <div class="card panel editor">${last ? summary(c) : keys.map(fieldHtml).join("")}</div>
@@ -373,7 +412,7 @@ ${D.isDemo() ? "" : `<p class="small muted center-t">${esc(S.user.email)}로 들
     document.getElementById("next").onclick = async () => {
       if (S.step === 0 && !(c.name || "").trim()) return toast("학원 이름을 적어 주세요");
       if (!last) { S.step++; draw(); scrollTo(0, 0); return; }
-      delete c._setup; await D.saveConfig(c); S.cfg = await D.getConfig(false) || c; toast("홈페이지에 올렸어요"); S.tab = "home"; render();
+      delete c._setup; await D.saveConfig(c); S.cfg = await D.getConfig(false) || c; await loadAll(); toast("홈페이지에 올렸어요"); S.tab = "home"; render();
     };
   };
   draw();
@@ -382,6 +421,7 @@ function summary(c) {
   const row = (l, v) => `<div class="sum-r"><span class="muted">${l}</span><span class="pl">${v}</span></div>`;
   return `<div class="sum">${row("학원", esc(c.name))}${row("한 줄 소개", esc(c.tagline || ""))}${row("주소", esc(c.address || ""))}${row("대표 번호", esc(c.phone || ""))}
 ${row("반", (c.classes || []).map(x => `${esc(x.name)} · ${esc(x.days || "")} ${esc(x.time || "")} · ${won(x.fee)}`).join("\n"))}
-${row("선생님", (c.teachers || []).map(x => esc(x.name)).join(", "))}${row("상담 시간", (c.consultSlots || []).map(esc).join("\n"))}</div>
-<p class="small muted">후기와 공지 띠는 나중에 '홈페이지 정보' 탭에서 넣어요.</p>`;
+${row("켠 기능", D.FEAT.filter(x => on(c, x[0])).map(x => x[1]).join(", ") || "기본만")}
+${on(c, "teachers") ? row("선생님", (c.teachers || []).map(x => esc(x.name)).join(", ")) : ""}${row("상담 시간", (c.consultSlots || []).map(esc).join("\n"))}</div>
+<p class="small muted">기능과 내용은 나중에 '홈페이지 정보' 탭에서 언제든 바꿔요.</p>`;
 }

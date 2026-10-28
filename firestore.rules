@@ -1,7 +1,8 @@
 rules_version = '2';
 // 학원 홈페이지 템플릿 보안 규칙
-// - 누구나: 홈페이지 정보 읽기, 상담 신청 쓰기(한 번 쓰면 끝), 리포트는 주소(긴 무작위 아이디)를 아는 사람만 한 건 읽기
-// - 나머지 읽기·쓰기는 관리자 이메일 계정만
+// - 누구나: 홈페이지 정보 읽기, 상담 신청 쓰기(한 번 쓰면 끝)
+// - 켠 기능만: 보강 신청 쓰기(makeup), 리포트 주소 한 건 읽기(report), 레벨테스트 결과를 붙인 상담 신청(leveltest)
+// - 나머지 읽기·쓰기는 관리자 이메일 계정만. 끈 기능(report, pay, makeup)의 자료는 관리자도 못 읽고 못 쓴다.
 // 관리자 이메일은 academy.json의 admins에 적고 `node tools/apply.mjs`를 돌리면 아래 목록이 바뀐다.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -10,30 +11,53 @@ service cloud.firestore {
         && request.auth.token.email_verified == true
         && request.auth.token.email.lower() in ['owner@example.com'];
     }
+    function on(f) {
+      let cfg = /databases/$(database)/documents/site/config;
+      return exists(cfg) && get(cfg).data.get('features', {}).get(f, false) == true;
+    }
     function s(v, n) { return v is string && v.size() <= n; }
+    function phoneOk(v) { return v is string && v.matches('^01[0-9]{8,9}$'); }
 
     match /site/config {
       allow read: if true;
       allow write: if isAdmin();
     }
     match /inquiries/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['name', 'grade', 'phone', 'time', 'memo', 'consent', 'status', 'createdAt'])
+      allow create: if request.resource.data.keys().hasOnly(['name', 'grade', 'phone', 'time', 'memo', 'consent', 'status', 'createdAt', 'level', 'source'])
         && s(request.resource.data.name, 20) && request.resource.data.name.size() > 0
         && s(request.resource.data.grade, 10)
-        && request.resource.data.phone is string && request.resource.data.phone.matches('^01[0-9]{8,9}$')
+        && phoneOk(request.resource.data.phone)
         && s(request.resource.data.time, 40)
         && s(request.resource.data.memo, 300)
         && request.resource.data.consent == true
         && request.resource.data.status == '문의'
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        && (!('level' in request.resource.data) || (on('leveltest') && s(request.resource.data.level, 80) && request.resource.data.source == '레벨테스트'));
       allow read, update, delete: if isAdmin();
     }
-    match /reports/{token} {
-      allow get: if token.size() >= 20;
-      allow list, write: if isAdmin();
+    match /makeups/{id} {
+      allow create: if on('makeup')
+        && request.resource.data.keys().hasOnly(['name', 'cls', 'missed', 'want', 'phone', 'consent', 'status', 'createdAt'])
+        && s(request.resource.data.name, 20) && request.resource.data.name.size() > 0
+        && s(request.resource.data.cls, 40) && s(request.resource.data.missed, 10) && s(request.resource.data.want, 40)
+        && phoneOk(request.resource.data.phone)
+        && request.resource.data.consent == true
+        && request.resource.data.status == '신청'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin() && on('makeup');
     }
-    match /{col}/{id} {
-      allow read, write: if isAdmin() && col in ['schedule', 'students', 'payments'];
+    match /reports/{token} {
+      allow get: if on('report') && token.size() >= 20;
+      allow list, write: if isAdmin() && on('report');
+    }
+    match /payments/{id} {
+      allow read, write: if isAdmin() && on('pay');
+    }
+    match /schedule/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /students/{id} {
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -1,4 +1,4 @@
-import { init, getConfig, addInquiry, esc, won, ymd, applyColor, maskPhone, isDemo } from "./core.js";
+import { init, getConfig, addInquiry, addMakeup, esc, won, ymd, applyLook, maskPhone, isDemo, on } from "./core.js";
 
 const I = {
   phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
@@ -22,10 +22,12 @@ const GRADES = ["초1", "초2", "초3", "초4", "초5", "초6", "중1", "중2", 
 학원 정보를 넣으면 이곳에 보여요.</p><a class="btn pri" href="/admin/">관리자 화면 열기</a></main>`;
     return;
   }
-  applyColor(c.color);
+  applyLook(c);
   document.title = c.name;
-  app.innerHTML = [notice(c), header(c), hero(c), classes(c), fees(c), teachers(c), reviews(c), place(c), apply(c), footer(c), dock(c)].join("");
+  app.innerHTML = [on(c, "notice") ? notice(c) : "", header(c), hero(c), classes(c), on(c, "fees") ? fees(c) : "", on(c, "leveltest") ? level(c) : "", on(c, "teachers") ? teachers(c) : "", on(c, "reviews") ? reviews(c) : "", place(c), apply(c), on(c, "makeup") ? makeup(c) : "", footer(c), dock(c)].join("");
   bindForm(c);
+  if (on(c, "leveltest")) bindLevel(c);
+  if (on(c, "makeup")) bindMakeup(c);
   const dk = app.querySelector(".dock"), hc = app.querySelector(".hero-cta");
   if (dk && hc && "IntersectionObserver" in window) {
     dk.classList.add("off");
@@ -44,7 +46,7 @@ function logo(c) {
 }
 function header(c) {
   return `<header class="hd"><div class="wrap hd-in"><a class="brand" href="#top">${logo(c)}<span>${esc(c.name)}</span></a>
-<nav class="hd-nav"><a href="#classes">반·시간표</a><a href="#fees">원비</a><a href="#teachers">선생님</a><a href="#place">오시는 길</a></nav>
+<nav class="hd-nav">${[["classes", "반·시간표", 1], ["fees", "원비", on(c, "fees")], ["level", "레벨테스트", on(c, "leveltest") && (c.levelQuestions || []).length], ["teachers", "선생님", on(c, "teachers")], ["place", "오시는 길", 1], ["makeup", "보강 신청", on(c, "makeup")]].filter(x => x[2]).map(x => `<a href="#${x[0]}">${x[1]}</a>`).join("")}</nav>
 <a class="btn pri sm hd-cta" href="#apply">상담 신청</a></div></header>`;
 }
 function hero(c) {
@@ -104,6 +106,7 @@ function apply(c) {
 <label class="field"><span>학년</span><select class="sel" name="grade" required><option value="">고르기</option>${GRADES.map(g => `<option>${g}</option>`).join("")}</select></label>
 <label class="field"><span>학부모 연락처</span><input class="in" name="phone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13" required></label>
 <label class="field"><span>원하는 상담 시간</span><select class="sel" name="time" required><option value="">고르기</option>${slots.map(s => `<option>${esc(s)}</option>`).join("")}<option>전화로 정할게요</option></select></label>
+<div class="lv-chip" id="lvChip" hidden></div>
 <label class="field"><span>궁금한 점 <em class="muted">(선택)</em></span><textarea class="in" name="memo" maxlength="300" rows="3"></textarea></label>
 <div class="consent"><b>개인정보 수집·이용 동의 (필수)</b>
 <dl><div><dt>항목</dt><dd class="pl">학생 이름, 학년,
@@ -140,12 +143,77 @@ function bindForm(c) {
     err.hidden = true;
     const b = f.querySelector("button[type=submit]"); b.disabled = true; b.textContent = "보내는 중";
     try {
-      await addInquiry({ name: v.name.trim(), grade: v.grade, phone, time: v.time, memo: (v.memo || "").trim() });
+      await addInquiry({ name: v.name.trim(), grade: v.grade, phone, time: v.time, memo: (v.memo || "").trim(), level: window.__lvResult || "" });
       f.outerHTML = `<div class="card done">${I.ok}<h3>신청을 받았어요</h3><p class="pl muted">${esc(v.time)}에 맞춰
 ${esc(maskPhone(phone))}로 연락드릴게요.</p></div>`;
     } catch (x) {
       b.disabled = false; b.textContent = "상담 신청 보내기";
       err.textContent = "보내지 못했어요. 잠시 뒤 다시 눌러 주세요."; err.hidden = false;
     }
+  });
+}
+
+/* ---------- 레벨테스트 ---------- */
+function level(c) {
+  const q = c.levelQuestions || []; if (!q.length) return "";
+  return sec("level", "레벨테스트", `<div class="card lv" id="lv"><div class="lv-start"><div class="lv-meta"><b>${q.length}문항</b><span>약 ${Math.max(1, Math.round(q.length * 0.4))}분</span></div>
+<p class="pl muted">풀고 나면 결과와 맞는 반이 나오고,
+그 결과로 바로 상담을 신청할 수 있어요.</p><button class="btn pri" id="lvGo">시작하기</button></div></div>`);
+}
+function bindLevel(c) {
+  const box = document.getElementById("lv"); if (!box) return;
+  const Q = c.levelQuestions || [], R = (c.levelResults || []).slice().sort((a, b) => (+a.min || 0) - (+b.min || 0));
+  let i = 0, score = 0;
+  const draw = () => {
+    if (i >= Q.length) return result();
+    const q = Q[i]; const opts = [q.o1, q.o2, q.o3, q.o4].map((o, k) => [o, k + 1]).filter(x => x[0] !== undefined && x[0] !== "");
+    box.innerHTML = `<div class="lv-q"><div class="lv-prog"><span>${i + 1} / ${Q.length}</span><div class="bar-g"><i style="width:${Math.round(i / Q.length * 100)}%"></i></div></div>
+<h3 class="pl">${esc(q.q)}</h3><div class="lv-opts">${opts.map(([o, k]) => `<button class="btn lv-o" data-k="${k}"><span class="lv-n">${k}</span><span class="lv-t">${esc(o)}</span></button>`).join("")}</div></div>`;
+    box.querySelectorAll(".lv-o").forEach(b => b.onclick = () => { if (+b.dataset.k === +q.a) score++; i++; draw(); });
+  };
+  const result = () => {
+    const r = R.filter(x => score >= (+x.min || 0)).pop() || {};
+    const txt = `${score}/${Q.length}점${r.name ? " · " + r.name : ""}${r.cls ? " · 추천 " + r.cls : ""}`;
+    box.innerHTML = `<div class="lv-res"><p class="lv-score"><b>${score}</b><span>/ ${Q.length}점</span></p>${r.name ? `<h3>${esc(r.name)}</h3>` : ""}
+${r.cls ? `<p class="lv-cls"><span class="tag pri">추천 반</span><b>${esc(r.cls)}</b></p>` : ""}${r.text ? `<p class="pl muted">${esc(r.text)}</p>` : ""}
+<div class="lv-act"><button class="btn pri" id="lvApply">이 결과로 상담 신청</button><button class="btn" id="lvAgain">다시 풀기</button></div></div>`;
+    document.getElementById("lvAgain").onclick = () => { i = 0; score = 0; draw(); };
+    document.getElementById("lvApply").onclick = () => {
+      window.__lvResult = txt; const ch = document.getElementById("lvChip");
+      if (ch) { ch.innerHTML = `<span class="tag pri">레벨테스트</span><span>${esc(txt)}</span>`; ch.hidden = false; }
+      document.getElementById("apply").scrollIntoView({ behavior: "smooth" });
+    };
+  };
+  document.getElementById("lvGo").onclick = draw;
+}
+
+/* ---------- 보강 신청 ---------- */
+function makeup(c) {
+  const cl = (c.classes || []).map(x => x.name);
+  return sec("makeup", "보강 신청", `<form class="card form" id="mf" novalidate>
+<label class="field"><span>학생 이름</span><input class="in" name="name" maxlength="20" autocomplete="off"></label>
+<label class="field"><span>반</span><select class="sel" name="cls"><option value="">고르기</option>${cl.map(x => `<option>${esc(x)}</option>`).join("")}</select></label>
+<label class="field"><span>빠진 날</span><input class="in" type="date" name="missed"></label>
+<label class="field"><span>원하는 보강 시간</span><input class="in" name="want" maxlength="40" placeholder="예: 금요일 16시 이후"></label>
+<label class="field"><span>학부모 연락처</span><input class="in" name="phone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13"></label>
+<div class="consent"><b>개인정보 수집·이용 동의 (필수)</b>
+<dl><div><dt>항목</dt><dd class="pl">학생 이름, 반,
+학부모 연락처</dd></div><div><dt>목적</dt><dd>보강 일정 연락</dd></div><div><dt>보관</dt><dd>신청일부터 1년, 지나면 지워요.</dd></div></dl></div>
+<label class="check"><input type="checkbox" name="consent"><span>위 내용을 읽었고 동의해요.</span></label>
+<p class="err" id="merr" hidden></p>
+<button class="btn pri" type="submit">보강 신청 보내기</button></form>`, "다니는 학생만 신청할 수 있어요.\n원장님이 시간을 정해 문자로 알려 드려요.");
+}
+function bindMakeup(c) {
+  const f = document.getElementById("mf"); if (!f) return; const err = document.getElementById("merr");
+  f.phone.addEventListener("input", () => { const d = f.phone.value.replace(/\D/g, "").slice(0, 11); f.phone.value = d.length > 7 ? d.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3") : d.length > 3 ? d.slice(0, 3) + "-" + d.slice(3) : d; });
+  f.addEventListener("submit", async e => {
+    e.preventDefault(); const v = Object.fromEntries(new FormData(f)); const phone = (v.phone || "").replace(/\D/g, "");
+    const bad = !v.name.trim() ? "학생 이름을 적어 주세요." : !v.cls ? "반을 골라 주세요." : !v.missed ? "빠진 날을 골라 주세요." : !v.want.trim() ? "원하는 보강 시간을 적어 주세요." : !/^01\d{8,9}$/.test(phone) ? "연락처를 010-0000-0000 모양으로 적어 주세요." : !v.consent ? "개인정보 수집·이용에 동의해 주세요." : "";
+    if (bad) { err.textContent = bad; err.hidden = false; return; } err.hidden = true;
+    const b = f.querySelector("button[type=submit]"); b.disabled = true; b.textContent = "보내는 중";
+    try { await addMakeup({ name: v.name.trim(), cls: v.cls, missed: v.missed, want: v.want.trim(), phone });
+      f.outerHTML = `<div class="card done">${I.ok}<h3>보강 신청을 받았어요</h3><p class="pl muted">시간을 정해
+${esc(maskPhone(phone))}로 알려 드릴게요.</p></div>`;
+    } catch (x) { b.disabled = false; b.textContent = "보강 신청 보내기"; err.textContent = "보내지 못했어요. 잠시 뒤 다시 눌러 주세요."; err.hidden = false; }
   });
 }

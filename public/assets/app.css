@@ -10,6 +10,11 @@
   --sh: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.06);
   --font: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
+/* 학원마다 다른 모양: 글꼴·모서리 (알약 모양은 만들지 않는다: 버튼 48px에 모서리 최대 14px) */
+[data-corner="sharp"] { --r-btn: 4px; --r-card: 6px; --r-tag: 3px; }
+[data-corner="round"] { --r-btn: 14px; --r-card: 22px; --r-tag: 7px; }
+[data-font="serif"] { --font-h: "Noto Serif KR", "AppleMyungjo", "Nanum Myeongjo", "Batang", ui-serif, Georgia, serif; }
+[data-font="serif"] h1, [data-font="serif"] h2, [data-font="serif"] h3, [data-font="serif"] blockquote, [data-font="serif"] .brand { font-family: var(--font-h); }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--bg); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; -webkit-tap-highlight-color: transparent; }
