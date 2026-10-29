@@ -1,5 +1,9 @@
 # 학원 홈페이지 템플릿 (요메이트용)
 
+<!-- yomates-install:readme -->
+> **먼저 요메이트(Yomates)가 필요해요.** 이 스킬은 요메이트 앱 안에서 돌아가요. 아직 설치하지 않았다면 [YOMATES-INSTALL.md](YOMATES-INSTALL.md) 순서대로 설치한 뒤 돌아오세요. 공식 다운로드는 https://yomates.ai 하나뿐이에요.
+<!-- /yomates-install:readme -->
+
 원장님은 학원 정보만 넣으면 되는 학원 홈페이지와 관리자 화면이에요.
 빌드가 없는 정적 사이트라 Firebase Hosting(무료)과 Firestore, 구글 로그인만 있으면 돌아요.
 
