@@ -267,3 +267,117 @@ body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   [data-layout="flow"] body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   [data-layout="flow"] .dock { display: grid; max-width: 600px; margin: 0 auto; left: 0; right: 0; border: 1px solid var(--line); border-bottom: 0; border-radius: var(--r-card) var(--r-card) 0 0; }
 }
+
+/* ===== 휴대폰 배치 (2026-11-08 Yui, 충쌤 "이거 모바일은 다 똑같은데?!?!")
+   720px 아래에서 배치 6가지가 첫 화면부터 서로 다르게 보이게 한다. 컴퓨터 화면 규칙은 건드리지 않는다.
+   색·모서리·간격은 테마 변수만 쓴다. 문구와 순서는 그대로다. ===== */
+@media (max-width: 719px) {
+  /* 좌우 나눔: 버튼 두 개를 좌우로, 요약 칸은 옆으로 넘기는 줄 */
+  [data-layout="split"] .hero-cta { grid-template-columns: 1fr 1fr; gap: 8px; }
+  [data-layout="split"] .hero-cta .btn { padding: 0 10px; font-size: 15px; }
+  [data-layout="split"] .hero .facts { display: flex; gap: 10px; margin: 28px -20px 0; padding: 4px 20px 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 20px; scrollbar-width: none; }
+  [data-layout="split"] .hero .facts::-webkit-scrollbar { display: none; }
+  [data-layout="split"] .hero .facts li { flex: 0 0 auto; width: auto; min-width: 150px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; min-height: 96px; padding: 14px 18px; scroll-snap-align: start; background: #fff; box-shadow: var(--sh); }
+  [data-layout="split"] .hero .facts b { font-size: 17px; }
+  [data-layout="split"][data-mode="deep"] .hero .facts li { background: rgba(255,255,255,.1); box-shadow: none; }
+  [data-layout="split"] .hero .facts span { text-align: left; flex: initial; white-space: nowrap; }
+
+  /* 가운데: 큰 제목과 꽉 찬 버튼, 정보는 가운데 한 줄 요약(세로 구분선) */
+  [data-layout="center"] .hero-in { padding-top: 56px; padding-bottom: 44px; }
+  [data-layout="center"] .hero-cta { justify-items: stretch; margin-top: 32px; }
+  [data-layout="center"] .hero-cta .btn.pri { height: 56px; font-size: 17px; }
+  [data-layout="center"] .hero-cta .btn:not(.pri) { border-color: transparent; background: none; color: var(--sub); height: 44px; }
+  [data-layout="center"] .hero .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 28px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  [data-layout="center"] .hero .facts li { flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 64px; padding: 0 6px; background: none; border: 0; border-radius: 0; text-align: center; word-break: keep-all; }
+  [data-layout="center"] .hero .facts li + li { border-left: 1px solid var(--line); }
+  [data-layout="center"] .hero .facts b { font-size: 14px; line-height: 1.35; }
+  [data-layout="center"] .hero .facts span { font-size: 12px; line-height: 1.4; text-align: center; flex: initial; }
+
+  /* 시간표 먼저: 첫 화면은 짧게, 바로 아래 표. 표 머리는 대표 색 띠 */
+  [data-layout="timetable"]:not([data-mode="deep"]) .hero { background: var(--bg, #fff); }
+  [data-layout="timetable"] .hero-in { padding-top: 24px; padding-bottom: 28px; gap: 20px; }
+  [data-layout="timetable"] .hero-p { margin-top: 10px; font-size: 15px; line-height: 1.6; }
+  [data-layout="timetable"] .hero-cta { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+  [data-layout="timetable"] .hero-cta .btn { padding: 0 10px; font-size: 15px; }
+  [data-layout="timetable"] .tt { padding: 0; gap: 0; overflow: hidden; }
+  [data-layout="timetable"] .tt-hd { min-height: 48px; padding: 0 16px; background: var(--pri); color: #fff; }
+  [data-layout="timetable"] .tt-hd h2 { color: #fff; }
+  [data-layout="timetable"] .tt-hd .tag { background: rgba(255,255,255,.18); color: #fff; }
+  [data-layout="timetable"] .tt-list li { padding: 12px 16px; }
+  [data-layout="timetable"] .tt-list li:first-child { border-top: 0; }
+  [data-layout="timetable"] .tt-list li:nth-child(even) { background: var(--soft); }
+  [data-layout="timetable"] .tt-note { padding: 0 16px 14px; }
+
+  /* 잡지처럼: 굵은 위 선과 큰 제목, 번호 붙은 꼭지와 가는 구분선, 버튼은 네모 테두리 */
+  [data-layout="magazine"] .hero-in { padding-top: 28px; border-bottom: 1px solid var(--ink); }
+  [data-layout="magazine"] .hero-main { padding-top: 20px; border-top: 6px solid var(--ink); }
+  [data-layout="magazine"] .hero h1 { font-weight: 900; letter-spacing: -.03em; }
+  [data-layout="magazine"] .hero-cta .btn { border-radius: 0; }
+  [data-layout="magazine"] .hero-cta .btn:not(.pri) { border-color: var(--ink); }
+  [data-layout="magazine"] .hero .facts { counter-reset: fx; border-top: 0; margin-top: 28px; }
+  [data-layout="magazine"] .hero .facts li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; min-height: 52px; }
+  [data-layout="magazine"] .hero .facts li::before { counter-increment: fx; content: counter(fx, decimal-leading-zero); font: 700 13px/1 var(--font); color: var(--pri); font-variant-numeric: tabular-nums; }
+  [data-layout="magazine"] .hero .facts li:first-child { border-top: 1px solid var(--line); }
+
+  /* 카드 모음: 대표 색 상자 첫 화면, 요약은 2열 타일, 반 카드도 2열 */
+  [data-layout="cards"] .hero-in { padding: 28px 20px; }
+  [data-layout="cards"] .hero-cta { grid-template-columns: 1fr 1fr; gap: 8px; }
+  [data-layout="cards"] .hero-cta .btn { padding: 0 10px; font-size: 15px; }
+  [data-layout="cards"] .hero .facts { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
+  [data-layout="cards"] .hero .facts li { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; min-height: 76px; padding: 12px 14px; background: #fff; border-color: transparent; }
+  [data-layout="cards"] .hero .facts li:first-child { grid-column: 1 / -1; }
+  [data-layout="cards"] .hero .facts span { text-align: left; flex: initial; }
+  [data-layout="cards"][data-mode="deep"] .hero .facts li { background: rgba(255,255,255,.12); }
+  [data-layout="cards"] #classes .grid3 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  [data-layout="cards"] #classes .cls { padding: 16px 14px; }
+  [data-layout="cards"] #classes .cls-hd { flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 10px; }
+  [data-layout="cards"] #classes .kv dt { width: 30px; font-size: 13px; }
+  [data-layout="cards"] #classes .kv dd { font-size: 14px; }
+
+  /* 이어 읽기: 왼쪽 세로선과 점으로 이어지는 흐름 */
+  [data-layout="flow"]:not([data-mode="deep"]) .hero { background: var(--bg, #fff); border-bottom: 0; }
+  [data-layout="flow"] .hero-in, [data-layout="flow"] .sec > .wrap { position: relative; padding-left: 48px; }
+  [data-layout="flow"] .hero-in::before, [data-layout="flow"] .sec > .wrap::before { content: ""; position: absolute; top: 0; bottom: 0; left: 27px; width: 2px; background: var(--pri-line, var(--line)); }
+  [data-layout="flow"] .hero-main { position: relative; }
+  [data-layout="flow"] .hero-main::before { content: ""; position: absolute; left: -26px; top: 12px; width: 12px; height: 12px; border-radius: 50%; background: var(--pri); box-shadow: 0 0 0 4px var(--bg, #fff); }
+  [data-layout="flow"] .hero .facts { gap: 0; margin-top: 24px; }
+  [data-layout="flow"] .hero .facts li { position: relative; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 60px; padding: 8px 0; background: none; border: 0; border-radius: 0; }
+  [data-layout="flow"] .hero .facts li::before { content: ""; position: absolute; left: -25px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--bg, #fff); border: 2px solid var(--pri); box-sizing: border-box; }
+  [data-layout="flow"] .hero .facts span { text-align: left; flex: initial; }
+  [data-layout="flow"] .sec { padding-top: 0; }
+  [data-layout="flow"] .sec > .wrap { padding-top: var(--sec-y); }
+  [data-layout="flow"] .sec-hd h2 { position: relative; }
+  [data-layout="flow"] .sec-hd h2::before { position: absolute; left: -27px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; box-shadow: 0 0 0 4px var(--bg, #fff); }
+}
+
+/* 좁은 폰: 원장님이 나눈 제목 줄이 다시 접히지 않게 폭에 맞춰 줄이고, 버튼 두 개 나란히는 360px 이상에서만 (2026-11-08 Yui) */
+@media (max-width: 719px) {
+  [data-layout="split"]:not([data-font="serif"]) .hero h1 { font-size: min(29px, 7.4vw); }
+  [data-layout="center"]:not([data-font="serif"]) .hero h1 { font-size: min(30px, 7.5vw); }
+  [data-layout="timetable"]:not([data-font="serif"]) .hero h1 { font-size: min(24px, 7vw); }
+  [data-layout="magazine"]:not([data-font="serif"]) .hero h1 { font-size: min(30px, 7.4vw); }
+  [data-layout="cards"]:not([data-font="serif"]) .hero h1 { font-size: min(25px, 6.4vw); }
+  [data-layout="flow"]:not([data-font="serif"]) .hero h1 { font-size: min(26px, 6.5vw); }
+}
+@media (max-width: 719px) {
+  [data-font="serif"][data-layout="cards"] .hero h1, [data-font="serif"][data-layout="flow"] .hero h1 { font-size: min(24px, 5.3vw); }
+  [data-font="serif"][data-layout="timetable"] .hero h1 { font-size: min(24px, 5.7vw); }
+  [data-layout="center"][data-mode="deep"] .hero-cta .btn:not(.pri) { background: none; border-color: transparent; color: rgba(255,255,255,.86); }
+}
+@media (max-width: 359px) {
+  [data-layout="split"] .hero-cta, [data-layout="timetable"] .hero-cta, [data-layout="cards"] .hero-cta { grid-template-columns: 1fr; }
+}
+
+/* 모든 배치 공통: 끝에서 튕기지 않게, 손가락 화면에서 누르는 것은 44px 이상 (2026-11-08 Yui) */
+html, body { overscroll-behavior: none; }
+@media (max-width: 719px), (pointer: coarse) {
+  .brand { min-height: 44px; }
+  .btn.sm { height: 44px; }
+}
+
+/* 잡지처럼 + 진한 첫 화면: 흰 바탕에 흰 글자가 되던 것 고침. 선은 흰색으로 (2026-11-08 Yui) */
+[data-layout="magazine"][data-mode="deep"] .hero { background: radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--pri) 55%, var(--pri-deep)) 0%, var(--pri-deep) 65%); }
+[data-layout="magazine"][data-mode="deep"] .hero-in, [data-layout="magazine"][data-mode="deep"] .hero-main { border-color: rgba(255,255,255,.85); }
+[data-layout="magazine"][data-mode="deep"] .hero .facts li { background: none; border-color: rgba(255,255,255,.22); }
+[data-layout="magazine"][data-mode="deep"] .hero .facts li::before { color: rgba(255,255,255,.86); }
+[data-layout="magazine"][data-mode="deep"] .hero-cta .btn:not(.pri) { border-color: rgba(255,255,255,.7); }
