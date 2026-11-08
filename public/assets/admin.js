@@ -3,7 +3,7 @@ const { esc, won, ymd, rid, maskPhone, on } = D;
 
 const S = { user: null, cfg: null, tab: "home", data: {}, month: ymd(Date.now()).slice(0, 7), qf: "전체", step: 0, edit: null, studentEdit: null };
 const app = document.getElementById("app");
-const TABS = [["home", "한눈에"], ["inq", "상담"], ["sch", "일정"], ["stu", "학생", c => on(c, "report") || on(c, "pay")], ["rep", "리포트", c => on(c, "report")], ["pay", "원비", c => on(c, "pay")], ["site", "홈페이지 정보"]];
+const TABS = [["home", "한눈에"], ["inq", "상담"], ["sch", "일정"], ["stu", "학생", c => (!on(c, "report") || D.isDemo()) && (on(c, "report") || on(c, "pay"))], ["rep", "리포트", c => on(c, "report") && D.isDemo()], ["pay", "원비", c => on(c, "pay")], ["site", "홈페이지 정보"]];
 const tabsOn = () => TABS.filter(t => !t[2] || t[2](S.cfg));
 const STATUS = ["문의", "예약", "등록"];
 const TYPES = ["상담", "보강", "시험", "그 밖"];
@@ -44,12 +44,22 @@ D.onAuth(async u => {
 async function loadAll() {
   const c = S.cfg || {};
   ["inquiries", "schedule", "students", "reports", "payments", "makeups"].forEach(k => S.data[k] = []);
-  const cols = ["inquiries", "schedule", "students"];
-  if (on(c, "report")) cols.push("reports");
+  const builtin = on(c, "report") && !D.isDemo(); // 내장 리포트를 쓰는 학원은 학생 명단이 /app 하나뿐
+  const cols = builtin ? ["inquiries", "schedule"] : ["inquiries", "schedule", "students"];
   if (on(c, "pay")) cols.push("payments");
   if (on(c, "makeup")) cols.push("makeups");
   const r = await Promise.all(cols.map(c => D.list(c)));
   cols.forEach((c, i) => S.data[c] = r[i]);
+  if (builtin) S.data.students = await builtinStudents();
+}
+// /app 학생을 이 화면 모양(name, grade, cls, parentPhone, fee)으로 맞춘다. 휴원·퇴회는 뺀다.
+async function builtinStudents() {
+  const [st, cl] = await Promise.all([D.list("academies/main/students"), D.list("academies/main/classes")]);
+  const feeOf = n => ((S.cfg.classes || []).find(c => c.name === n) || {}).fee || 0;
+  return st.filter(s => !s.status || s.status === "active").map(s => {
+    const cls = cl.filter(c => (c.studentIds || []).includes(s.id)).map(c => c.name).join(", ");
+    return { id: s.id, name: s.name || "", grade: s.grade || "", cls, parentPhone: String(s.parentPhone || "").replace(/\D/g, ""), fee: s.fee != null ? +s.fee : feeOf(cls), builtin: true };
+  });
 }
 
 /* ---------- 로그인 ---------- */
@@ -75,7 +85,7 @@ function render() {
   const c = S.cfg;
   app.innerHTML = `<header class="ab"><div class="ab-in">
 <a class="brand" href="/" target="_blank" rel="noopener">${c.logo ? `<img class="logo" src="${esc(c.logo)}" alt="">` : `<span class="logo logo-t">${esc(c.name[0])}</span>`}<span>${esc(c.name)}</span></a>
-${D.on(c, "report") ? `<a class="btn sm" href="/app/">수업·리포트</a>` : ""}
+${D.on(c, "report") || D.on(c, "homework") ? `<a class="btn sm" href="/app/">수업·리포트</a>` : ""}
 <a class="btn sm ghost hide-s" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지</a>
 <button class="btn sm ghost" id="out" aria-label="로그아웃">${ic.out}<span class="hide-s">로그아웃</span></button></div>
 <nav class="tabs" role="tablist">${tabsOn().map(([k, t]) => `<button role="tab" class="tab${S.tab === k ? " on" : ""}" data-tab="${k}">${t}</button>`).join("")}</nav></header>
@@ -102,7 +112,7 @@ function home(m) {
   const C = S.cfg, mk = S.data.makeups.filter(x => x.status === "신청");
   const stats = [stat("오늘 일정", todayN + "건", "sch"), stat("새 상담 문의", newQ.length + "건", "inq", newQ.length ? "pri" : ""),
     on(C, "makeup") ? stat("보강 신청", mk.length + "건", "sch", mk.length ? "pri" : "") : "",
-    on(C, "report") ? stat(mLabel(S.month) + " 리포트 보냄", `${sent} / ${st.length}명`, "rep") : "",
+    on(C, "report") ? `<a class="card stat" href="/app/"><span>수업·리포트</span><b>${st.length}명</b></a>` : "",
     on(C, "pay") ? stat(mLabel(S.month) + " 원비 미납", unpaid.length + "명", "pay", unpaid.length ? "warn" : "") : ""].filter(Boolean);
   m.innerHTML = `<div class="stats n${stats.length}">${stats.join("")}</div>
 <div class="cols">
@@ -111,8 +121,9 @@ function home(m) {
 <section class="card panel"><div class="ph"><h2>상담 신청</h2><button class="btn xs" data-go="inq">전체 보기</button></div>
 <div class="funnel">${STATUS.map(s => `<div><b>${inq.filter(q => q.status === s).length}</b><span>${s}</span></div>`).join("")}</div>
 ${inq.filter(q => q.status !== "등록").sort((a, b) => b.createdAt - a.createdAt).slice(0, 3).map(q => qRow(q, true)).join("") || `<p class="empty-t">새 신청이 없어요.</p>`}</section>
-${on(C, "report") ? `<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 리포트</h2><button class="btn xs" data-go="rep">쓰러 가기</button></div>
-${bar(sent, st.length, "보냄")}<p class="small muted">${st.length - reps.length}명 안 씀 · ${reps.length - sent}명 써 두고 안 보냄</p></section>` : ""}
+${on(C, "report") ? `<section class="card panel"><div class="ph"><h2>수업·리포트</h2><a class="btn xs" href="/app/">열기</a></div>
+<p class="small muted pl">학생·반, 수업일지, 출결·보강, 상담, 학부모 리포트${on(C, "homework") ? ", 과제" : ""}는
+수업·리포트 화면에서 해요.</p></section>` : ""}
 ${on(C, "pay") ? `<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 원비</h2><button class="btn xs" data-go="pay">표 보기</button></div>
 ${bar(st.length - unpaid.length, st.length, "납부")}
 ${unpaid.length ? `<ul class="mini">${unpaid.map(s => `<li><span>${esc(s.name)} <em class="muted">${esc(s.cls)}</em></span><b class="num">${won(s.fee)}</b></li>`).join("")}</ul>` : `<p class="empty-t">모두 냈어요.</p>`}</section>` : ""}
@@ -161,7 +172,7 @@ function bindQ(m) {
   m.querySelectorAll("[data-q]").forEach(b => b.onclick = async () => {
     const q = S.data.inquiries.find(x => x.id === b.dataset.q); q.status = b.dataset.s;
     await D.put("inquiries", q.id, { status: q.status });
-    if (q.status === "등록") toast("등록으로 바꿨어요. 학생 탭에서 명단에 넣어 주세요");
+    if (q.status === "등록") toast(on(S.cfg, "report") ? "등록으로 바꿨어요. 수업·리포트 화면의 학생에서 명단에 넣어 주세요" : "등록으로 바꿨어요. 학생 탭에서 명단에 넣어 주세요");
     render();
   });
   m.querySelectorAll("[data-when]").forEach(i => i.onchange = async () => {
@@ -312,10 +323,14 @@ function pay(m) {
   m.innerHTML = `<div class="toolbar">${monthPick()}<div class="tb-r"><button class="btn sm pri" id="csvPay"${un.filter(s => s.parentPhone).length ? "" : " disabled"}>${ic.dl}미납 안내 CSV ${un.filter(s => s.parentPhone).length}건</button></div></div>
 <div class="stats two"><div class="card stat ok"><span>납부 ${paid.length}명</span><b class="num">${won(sum(paid))}</b></div><div class="card stat ${un.length ? "warn" : ""}"><span>미납 ${un.length}명</span><b class="num">${won(sum(un))}</b></div></div>
 <section class="card panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>이름</th><th>반</th><th class="r">원비</th><th>상태</th><th>낸 날</th></tr></thead><tbody>
-${st.map(s => { const p = payOf(s.id, S.month); return `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.cls)}</td><td class="r num">${won(s.fee)}</td>
+${st.map(s => { const p = payOf(s.id, S.month); return `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.cls)}</td><td class="r num">${s.builtin ? `<button class="btn xs ghost num" data-fee="${s.id}" aria-label="${esc(s.name)} 원비 고치기">${s.fee ? won(s.fee) : "원비 넣기"}</button>` : won(s.fee)}</td>
 <td><div class="seg sm"><button class="${p.paid ? "on" : ""}" data-pay="${s.id}" data-v="1">납부</button><button class="${!p.paid ? "on warn" : ""}" data-pay="${s.id}" data-v="0">미납</button></div></td>
-<td class="num muted">${p.paid && p.paidAt ? `${+p.paidAt.slice(5, 7)}/${+p.paidAt.slice(8)}` : ""}</td></tr>`; }).join("") || `<tr><td colspan="5" class="empty-t">학생 탭에서 명단을 먼저 넣어 주세요.</td></tr>`}</tbody></table></div></section>`;
+<td class="num muted">${p.paid && p.paidAt ? `${+p.paidAt.slice(5, 7)}/${+p.paidAt.slice(8)}` : ""}</td></tr>`; }).join("") || `<tr><td colspan="5" class="empty-t">${on(S.cfg, "report") ? "수업·리포트 화면의 학생에서 명단을 먼저 넣어 주세요." : "학생 탭에서 명단을 먼저 넣어 주세요."}</td></tr>`}</tbody></table></div></section>`;
   bindMonth(m, pay);
+  m.querySelectorAll("[data-fee]").forEach(b => b.onclick = async () => {
+    const s0 = S.data.students.find(x => x.id === b.dataset.fee); const v = prompt(`${s0.name} 학생 한 달 원비(원)`, s0.fee || "");
+    if (v == null) return; const n = +String(v).replace(/\D/g, ""); if (!n) return toast("숫자로 적어 주세요");
+    await D.put("academies/main/students", s0.id, { fee: n }); await loadAll(); toast("저장했어요"); pay(m); });
   m.querySelectorAll("[data-pay]").forEach(b => b.onclick = async () => { const sid = b.dataset.pay, v = b.dataset.v === "1";
     await D.put("payments", S.month + "_" + sid, { month: S.month, studentId: sid, paid: v, paidAt: v ? today() : null }); await loadAll(); pay(m); });
   document.getElementById("csvPay").onclick = () => downloadCsv(`원비안내_${S.month}.csv`, [["번호", "내용"], ...un.filter(s => s.parentPhone).map(s => [s.parentPhone, `[${S.cfg.name}] ${s.name} 학생 ${mLabel(S.month)} 원비 ${won(s.fee)} 안내드려요.\\n이미 내셨다면 이 문자는 넘겨 주세요.`])]);
