@@ -9,7 +9,7 @@
 
 - 데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app · 관리자 화면 https://yomates-academy-demo.web.app/admin
 - 기본 기능만 켠 데모: https://yomates-academy-demo.web.app/?demo=basic · https://yomates-academy-demo.web.app/admin?demo=basic
-- 틀은 하나이고 기능을 켜고 꺼요: 월말 리포트, 원비 납부 표, 원비 공개, 선생님 소개, 후기, 공지 띠, 레벨테스트, 보강 신청 (`academy.json`의 `features`)
+- 틀은 하나이고 기능을 켜고 꺼요: 수업·리포트(온리포트 내장), 과제 관리(완료 체크·온라인 OMR), 원비 납부 표, 원비 공개, 선생님 소개, 후기, 공지 띠, 레벨테스트, 보강 신청 (`academy.json`의 `features`)
 - 학원마다 모양이 달라요: 레이아웃 6가지, 로고에서 뽑아 대비를 맞춘 6색 팔레트, 글꼴 짝 3가지, 모서리 3단계, 여백 2단계 (`theme`). 사진은 넣지 않아요
 - 같은 자료, 다른 모양 데모: https://yomates-academy-demo.web.app/?theme=a … ?theme=f
 - 세팅 순서: [SKILL.md](SKILL.md) (요메이트 스킬 `학원-홈페이지-템플릿`)
@@ -20,7 +20,10 @@
 |---|---|
 | `/` | 학원 소개, 반·시간표, 오시는 길, 입회·상담 신청 + 켠 기능(원비, 레벨테스트, 선생님, 후기, 보강 신청, 공지 띠) |
 | `/admin` | 처음 설정, 한눈에(일정·상담·리포트·원비), 상담, 일정, 학생, 리포트, 원비, 홈페이지 정보 |
-| `/r/?t=…` | 학부모가 여는 월말 리포트 |
+| `/app` | 수업·리포트 화면: 학생·반, 수업일지, 출결·보강, 상담, 리포트 구성, 과제 |
+| `/app/r/…` | 학부모가 여는 리포트(로그인 없음) |
+| `/app/s/…` | 학생 과제 링크(로그인 없음) |
+| `/r/?t=…` | 예전 다섯 칸 월말 리포트(데모용) |
 
 ## 파일
 
@@ -28,6 +31,8 @@
 - `tools/apply.mjs`: academy.json을 사이트와 보안 규칙에 반영
 - `tools/shots.mjs`: 공유 그림(og.png)과 홈 화면 아이콘
 - `firestore.rules.template`: 보안 규칙 원본 (관리자 이메일은 apply.mjs가 넣음)
+- `firestore.indexes.json`: 수업일지 색인
+- `public/app/`: 수업·리포트 화면(빌드된 파일, 고치지 않음)
 - `public/firebase-config.json`: `{}`이면 데모로 돌고, Firebase 웹 앱 설정값을 넣으면 실제로 돌아요
 
 문자는 사이트에서 보내지 않아요. 관리자 화면에서 '보낼 목록 CSV(번호,내용)'를 내려받아 [솔라피 스킬](https://github.com/from5302-lab/yomates-solapi-skill)의 `bulk --file`로 보내요.
