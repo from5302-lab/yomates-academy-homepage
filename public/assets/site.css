@@ -323,13 +323,13 @@ body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   [data-layout="cards"] .hero-in { padding: 28px 20px; }
   [data-layout="cards"] .hero-cta { grid-template-columns: 1fr 1fr; gap: 8px; }
   [data-layout="cards"] .hero-cta .btn { padding: 0 10px; font-size: 15px; }
-  [data-layout="cards"] .hero .facts { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
+  [data-layout="cards"] .hero .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 24px; }
   [data-layout="cards"] .hero .facts li { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; min-height: 76px; padding: 12px 14px; background: #fff; border-color: transparent; }
   [data-layout="cards"] .hero .facts li:first-child { grid-column: 1 / -1; }
   [data-layout="cards"] .hero .facts span { text-align: left; flex: initial; }
   [data-layout="cards"][data-mode="deep"] .hero .facts li { background: rgba(255,255,255,.12); }
-  [data-layout="cards"] #classes .grid3 { grid-template-columns: 1fr 1fr; gap: 8px; }
-  [data-layout="cards"] #classes .cls { padding: 16px 14px; }
+  [data-layout="cards"] #classes .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  [data-layout="cards"] #classes .cls { min-width: 0; padding: 16px 14px; overflow-wrap: anywhere; }
   [data-layout="cards"] #classes .cls-hd { flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 10px; }
   [data-layout="cards"] #classes .kv dt { width: 30px; font-size: 13px; }
   [data-layout="cards"] #classes .kv dd { font-size: 14px; }
