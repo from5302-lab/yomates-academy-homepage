@@ -85,7 +85,7 @@ function render() {
   const c = S.cfg;
   app.innerHTML = `<header class="ab"><div class="ab-in">
 <a class="brand" href="/" target="_blank" rel="noopener">${c.logo ? `<img class="logo" src="${esc(c.logo)}" alt="">` : `<span class="logo logo-t">${esc(c.name[0])}</span>`}<span>${esc(c.name)}</span></a>
-${D.on(c, "report") || D.on(c, "homework") ? `<a class="btn sm" href="/app/">수업·리포트</a>` : ""}
+${(D.on(c, "report") || D.on(c, "homework")) && !D.isDemo() ? `<a class="btn sm" href="/app/">수업·리포트</a>` : ""}
 <a class="btn sm ghost hide-s" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지</a>
 <button class="btn sm ghost" id="out" aria-label="로그아웃">${ic.out}<span class="hide-s">로그아웃</span></button></div>
 <nav class="tabs" role="tablist">${tabsOn().map(([k, t]) => `<button role="tab" class="tab${S.tab === k ? " on" : ""}" data-tab="${k}">${t}</button>`).join("")}</nav></header>
@@ -112,7 +112,8 @@ function home(m) {
   const C = S.cfg, mk = S.data.makeups.filter(x => x.status === "신청");
   const stats = [stat("오늘 일정", todayN + "건", "sch"), stat("새 상담 문의", newQ.length + "건", "inq", newQ.length ? "pri" : ""),
     on(C, "makeup") ? stat("보강 신청", mk.length + "건", "sch", mk.length ? "pri" : "") : "",
-    on(C, "report") ? `<a class="card stat" href="/app/"><span>수업·리포트</span><b>${st.length}명</b></a>` : "",
+    // 데모에는 Firebase가 없어 /app이 열리지 않는다. 데모는 옛 학생·리포트 탭으로 둘러본다
+    on(C, "report") ? (D.isDemo() ? stat("학생", st.length + "명", "stu") : `<a class="card stat" href="/app/"><span>수업·리포트</span><b>${st.length}명</b></a>`) : "",
     on(C, "pay") ? stat(mLabel(S.month) + " 원비 미납", unpaid.length + "명", "pay", unpaid.length ? "warn" : "") : ""].filter(Boolean);
   m.innerHTML = `<div class="stats n${stats.length}">${stats.join("")}</div>
 <div class="cols">
@@ -121,9 +122,9 @@ function home(m) {
 <section class="card panel"><div class="ph"><h2>상담 신청</h2><button class="btn xs" data-go="inq">전체 보기</button></div>
 <div class="funnel">${STATUS.map(s => `<div><b>${inq.filter(q => q.status === s).length}</b><span>${s}</span></div>`).join("")}</div>
 ${inq.filter(q => q.status !== "등록").sort((a, b) => b.createdAt - a.createdAt).slice(0, 3).map(q => qRow(q, true)).join("") || `<p class="empty-t">새 신청이 없어요.</p>`}</section>
-${on(C, "report") ? `<section class="card panel"><div class="ph"><h2>수업·리포트</h2><a class="btn xs" href="/app/">열기</a></div>
+${on(C, "report") ? `<section class="card panel"><div class="ph"><h2>수업·리포트</h2>${D.isDemo() ? "" : `<a class="btn xs" href="/app/">열기</a>`}</div>
 <p class="small muted pl">학생·반, 수업일지, 출결·보강, 상담, 학부모 리포트${on(C, "homework") ? ", 과제" : ""}는
-수업·리포트 화면에서 해요.</p></section>` : ""}
+수업·리포트 화면에서 해요.</p>${D.isDemo() ? `<p class="small muted pl">이 화면은 원장님 Firebase에 세팅한 뒤에 열려요.<br>데모에서는 학생·리포트 탭으로 둘러봐요.</p>` : ""}</section>` : ""}
 ${on(C, "pay") ? `<section class="card panel"><div class="ph"><h2>${mLabel(S.month)} 원비</h2><button class="btn xs" data-go="pay">표 보기</button></div>
 ${bar(st.length - unpaid.length, st.length, "납부")}
 ${unpaid.length ? `<ul class="mini">${unpaid.map(s => `<li><span>${esc(s.name)} <em class="muted">${esc(s.cls)}</em></span><b class="num">${won(s.fee)}</b></li>`).join("")}</ul>` : `<p class="empty-t">모두 냈어요.</p>`}</section>` : ""}
