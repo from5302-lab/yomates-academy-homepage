@@ -205,3 +205,9 @@ div.stat { cursor: default; }
 
 /* 수업·리포트로 가는 칸은 링크지만 다른 칸과 같은 모양 */
 a.card.stat { text-decoration: none; color: var(--ink); }
+
+/* 폰·손가락 화면: 누르는 것은 44px 이상 (2026-11-08 Yui). 색·모서리는 그대로 테마 변수 */
+@media (pointer: coarse), (max-width: 760px) {
+  .brand { min-height: 44px; }
+  .btn.sm, .btn.xs { height: 44px; }
+}
