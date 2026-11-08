@@ -22,7 +22,8 @@
     "reviews": true,
     "notice": true,
     "leveltest": true,
-    "makeup": true
+    "makeup": true,
+    "homework": false
   },
   "address": "제주시 한빛로 00, 2층 (가짜 주소)",
   "parking": "건물 뒤 공영주차장,\n상담 오시면 1시간 무료",
