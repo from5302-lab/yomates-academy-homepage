@@ -7,7 +7,7 @@
 원장님은 학원 정보만 넣으면 되는 학원 홈페이지와 관리자 화면이에요.
 빌드가 없는 정적 사이트라 Firebase Hosting(무료)과 Firestore, 구글 로그인만 있으면 돌아요.
 
-- 데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app · 관리자 화면 https://yomates-academy-demo.web.app/admin
+- 데모(예시 학원 '한빛영어학원'): https://yomates-academy-demo.web.app · 관리자 화면 https://yomates-academy-demo.web.app/admin
 - 기본 기능만 켠 데모: https://yomates-academy-demo.web.app/?demo=basic · https://yomates-academy-demo.web.app/admin?demo=basic
 - 틀은 하나이고 기능을 켜고 꺼요: 수업·리포트(온리포트 내장), 과제 관리(완료 체크·온라인 OMR), 원비 납부 표, 원비 공개, 선생님 소개, 후기, 공지 띠, 레벨테스트, 보강 신청 (`academy.json`의 `features`)
 - 학원마다 모양이 달라요: 레이아웃 6가지, 로고에서 뽑아 대비를 맞춘 6색 팔레트, 글꼴 짝 3가지, 모서리 3단계, 여백 2단계 (`theme`). 사진은 넣지 않아요
@@ -27,7 +27,7 @@
 
 ## 파일
 
-- `academy.json`: 학원마다 다른 값 전부 (지금은 가짜 학원 예시)
+- `academy.json`: 학원마다 다른 값 전부 (지금은 예시 학원)
 - `tools/apply.mjs`: academy.json을 사이트와 보안 규칙에 반영
 - `tools/shots.mjs`: 공유 그림(og.png)과 홈 화면 아이콘
 - `firestore.rules.template`: 보안 규칙 원본 (관리자 이메일은 apply.mjs가 넣음)

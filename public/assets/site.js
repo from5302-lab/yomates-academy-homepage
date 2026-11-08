@@ -1,4 +1,4 @@
-import { init, getConfig, addInquiry, addMakeup, esc, won, ymd, applyTheme, themeOf, maskPhone, isDemo, on } from "./core.js";
+import { init, getConfig, addInquiry, addMakeup, esc, won, ymd, applyTheme, themeOf, maskPhone, isDemo, isPreview, on } from "./core.js";
 
 const I = {
   phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
@@ -12,7 +12,7 @@ const I = {
 };
 const GRADES = ["초1", "초2", "초3", "초4", "초5", "초6", "중1", "중2", "중3", "고1", "고2", "고3", "그 밖"];
 
-(async function main() {
+async function main() {
   const app = document.getElementById("app");
   await init();
   let c;
@@ -34,7 +34,10 @@ const GRADES = ["초1", "초2", "초3", "초4", "초5", "초6", "중1", "중2", 
     dk.classList.add("off");
     new IntersectionObserver(([e]) => dk.classList.toggle("off", e.isIntersecting)).observe(hc);
   }
-})();
+}
+main();
+// 미리보기: 부모 창(같은 출처)이 값을 바꾸면 다시 그린다
+if (isPreview()) window.addEventListener("message", e => { if (e.origin === location.origin && e.data === "academy-preview:refresh") main(); });
 
 function notice(c) {
   const n = c.notice;

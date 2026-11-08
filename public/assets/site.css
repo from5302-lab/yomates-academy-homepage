@@ -381,3 +381,6 @@ html, body { overscroll-behavior: none; }
 [data-layout="magazine"][data-mode="deep"] .hero .facts li { background: none; border-color: rgba(255,255,255,.22); }
 [data-layout="magazine"][data-mode="deep"] .hero .facts li::before { color: rgba(255,255,255,.86); }
 [data-layout="magazine"][data-mode="deep"] .hero-cta .btn:not(.pri) { border-color: rgba(255,255,255,.7); }
+
+/* 미리보기(신청서 견본) 안에서는 데모 안내 줄을 숨긴다 */
+[data-preview] .demo-note { display: none; }
