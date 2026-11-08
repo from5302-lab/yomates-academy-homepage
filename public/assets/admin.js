@@ -75,6 +75,7 @@ function render() {
   const c = S.cfg;
   app.innerHTML = `<header class="ab"><div class="ab-in">
 <a class="brand" href="/" target="_blank" rel="noopener">${c.logo ? `<img class="logo" src="${esc(c.logo)}" alt="">` : `<span class="logo logo-t">${esc(c.name[0])}</span>`}<span>${esc(c.name)}</span></a>
+${D.on(c, "report") ? `<a class="btn sm" href="/app/">수업·리포트</a>` : ""}
 <a class="btn sm ghost hide-s" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지</a>
 <button class="btn sm ghost" id="out" aria-label="로그아웃">${ic.out}<span class="hide-s">로그아웃</span></button></div>
 <nav class="tabs" role="tablist">${tabsOn().map(([k, t]) => `<button role="tab" class="tab${S.tab === k ? " on" : ""}" data-tab="${k}">${t}</button>`).join("")}</nav></header>

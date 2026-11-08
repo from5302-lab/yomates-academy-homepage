@@ -59,5 +59,46 @@ service cloud.firestore {
     match /students/{id} {
       allow read, write: if isAdmin();
     }
+
+    // ---- 내장 리포트(/app, 온리포트 학원판) ----
+    // 학원 자료는 academies/main 아래에만 둔다. 관리자만 읽고 쓴다.
+    match /academies/{aid}/{rest=**} {
+      allow read, write: if isAdmin() && aid == 'main';
+    }
+    match /academies/{aid} {
+      allow read, write: if isAdmin() && aid == 'main';
+    }
+    match /users/{uid} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && request.auth.uid == uid;
+    }
+    // 학부모 링크: 토큰(문서 id)을 아는 사람만 한 건 읽는다. 목록은 관리자만.
+    match /publicReports/{token} {
+      allow get: if on('report') && token.size() >= 20;
+      allow list, write: if isAdmin();
+    }
+    match /publicFamilies/{token} {
+      allow get: if on('report') && token.size() >= 20;
+      allow list, write: if isAdmin();
+    }
+    match /publicTemplates/{docId} {
+      allow get: if true;
+      allow write: if isAdmin() && docId.split('__')[0] == 'main';
+    }
+    match /publicNotices/{docId} {
+      allow get: if true;
+      allow write: if isAdmin() && docId == 'main';
+    }
+    match /noticeReads/{docId} {
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['academyId', 'noticeId', 'token', 'at'])
+        && request.resource.data.academyId == 'main'
+        && docId == request.resource.data.academyId + '__' + request.resource.data.noticeId + '__' + request.resource.data.token;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['at']);
+    }
+    match /config/{doc} {
+      allow get: if true;
+    }
   }
 }

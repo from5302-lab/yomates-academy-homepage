@@ -35,8 +35,9 @@ if (pal.mode && !TH.mode.includes(pal.mode)) { console.error(`theme.palette.mode
 for (const k of ["primary", "accent"]) if (pal[k] && !/^#[0-9a-f]{6}$/i.test(pal[k])) { console.error(`theme.palette.${k}는 #RRGGBB`); process.exit(1); }
 const color = pal.primary || (/^#[0-9a-f]{6}$/i.test(c.color || "") ? c.color : "#1E5BB8");
 const ch = [...c.name.replace(/\s/g, "")][0] || "학";
-fs.writeFileSync(path.join(root, "public/favicon.svg"),
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${color}"/><text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="34" font-weight="800" fill="#fff">${ch}</text></svg>\n`);
+const mark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${color}"/><text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="34" font-weight="800" fill="#fff">${ch}</text></svg>\n`;
+fs.writeFileSync(path.join(root, "public/favicon.svg"), mark);
+fs.writeFileSync(path.join(root, "public/logo.svg"), mark); // 내장 리포트(/app) 왼쪽 위 표시
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 const desc = esc(String(c.tagline).replace(/\s*\n\s*/g, " "));

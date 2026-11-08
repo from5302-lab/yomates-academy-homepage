@@ -1,0 +1,1 @@
+import{i as e,r as t}from"./firebase-B7kCXscw.js";export{t as auth,e as db};
