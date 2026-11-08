@@ -202,3 +202,6 @@ div.stat { cursor: default; }
   .cols.wide-r { grid-template-columns: 1fr 1.6fr; }
   .qgrid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* 수업·리포트로 가는 칸은 링크지만 다른 칸과 같은 모양 */
+a.card.stat { text-decoration: none; color: var(--ink); }
