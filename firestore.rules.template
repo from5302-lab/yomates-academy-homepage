@@ -100,5 +100,32 @@ service cloud.firestore {
     match /config/{doc} {
       allow get: if true;
     }
+
+    // ---- 과제 관리(homework) ----
+    // 학생은 로그인하지 않는다. 링크 토큰(32자)을 아는 사람만 그 학생의 과제 목록을 한 건 읽고 답을 낸다.
+    // 낸 답은 고칠 수 없다(다시 풀기는 새 문서). 채점용 정답은 그 과제를 낸 뒤에만 읽힌다.
+    match /portals/{token} {
+      allow get: if on('homework') && token.size() >= 24 && resource.data.active == true;
+      allow list, write: if isAdmin();
+      match /subs/{sid} {
+        allow read: if on('homework') && token.size() >= 24;
+        allow create: if on('homework')
+          && get(/databases/$(database)/documents/portals/$(token)).data.active == true
+          && sid.split('__')[0] in get(/databases/$(database)/documents/portals/$(token)).data.get('hw', {})
+          && (sid.split('__').size() == 1 || sid.split('__')[1].matches('r[0-9]{1,2}'))
+          && request.resource.data.keys().hasOnly(['answers', 'done', 'at'])
+          && request.resource.data.at == request.time
+          && (!('answers' in request.resource.data) || (request.resource.data.answers is list && request.resource.data.answers.size() <= 200))
+          && (!('done' in request.resource.data) || request.resource.data.done == true);
+        allow update, delete: if isAdmin();
+      }
+      match /keys/{hid} {
+        allow get: if on('homework') && exists(/databases/$(database)/documents/portals/$(token)/subs/$(hid));
+        allow list, write: if isAdmin();
+      }
+    }
+    match /{path=**}/subs/{sid} {
+      allow read: if isAdmin();
+    }
   }
 }

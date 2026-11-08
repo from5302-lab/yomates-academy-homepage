@@ -17,7 +17,7 @@ const admins = c.admins.map(e => String(e).trim().toLowerCase()).filter(e => /^[
 if (!admins.length) { console.error("admins에 관리자 구글 이메일을 한 개 이상 적어 주세요."); process.exit(1); }
 for (const k of c.classes) if (k.fee != null && !Number.isFinite(+k.fee)) { console.error(`원비는 숫자(원)로: ${k.name}`); process.exit(1); }
 
-const FEATS = ["report", "pay", "fees", "teachers", "reviews", "notice", "leveltest", "makeup"];
+const FEATS = ["report", "pay", "fees", "teachers", "reviews", "notice", "leveltest", "makeup", "homework"];
 const bad = Object.keys(c.features || {}).filter(k => !FEATS.includes(k));
 if (bad.length) { console.error("features에 모르는 기능: " + bad.join(", ") + " (쓸 수 있는 것: " + FEATS.join(", ") + ")"); process.exit(1); }
 c.features = Object.fromEntries(FEATS.map(k => [k, (c.features || {})[k] === true]));
