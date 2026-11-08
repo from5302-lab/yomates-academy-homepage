@@ -69,7 +69,7 @@ function renderLogin() {
 <p class="muted pl">등록한 원장님 구글 계정으로만
 들어올 수 있어요.</p>
 <button class="btn gbtn" id="in">${ic.g}구글 계정으로 들어가기</button>
-${D.isDemo() ? `<p class="note">데모 화면이에요. 누르면 가짜 학원 자료로 둘러봐요.</p>` : ""}
+${D.isDemo() ? `<p class="note">데모 화면이에요. 누르면 예시 학원 자료로 둘러봐요.</p>` : ""}
 <a class="btn ghost sm" href="/">홈페이지로 돌아가기</a></div></div>`;
   document.getElementById("in").onclick = () => D.signIn().catch(e => toast("로그인하지 못했어요"));
 }
@@ -89,7 +89,7 @@ ${(D.on(c, "report") || D.on(c, "homework")) && !D.isDemo() ? `<a class="btn sm"
 <a class="btn sm ghost hide-s" href="/" target="_blank" rel="noopener">${ic.ext}홈페이지</a>
 <button class="btn sm ghost" id="out" aria-label="로그아웃">${ic.out}<span class="hide-s">로그아웃</span></button></div>
 <nav class="tabs" role="tablist">${tabsOn().map(([k, t]) => `<button role="tab" class="tab${S.tab === k ? " on" : ""}" data-tab="${k}">${t}</button>`).join("")}</nav></header>
-${D.isDemo() ? `<div class="demo-bar pl">데모예요. 가짜 학원·가짜 학생 자료예요.
+${D.isDemo() ? `<div class="demo-bar pl">데모예요. 예시 학원·예시 학생 자료예요.
 바꾼 것은 이 브라우저에만 남아요.</div>` : ""}
 <main class="main" id="main"></main>`;
   document.getElementById("out").onclick = () => D.signOut();

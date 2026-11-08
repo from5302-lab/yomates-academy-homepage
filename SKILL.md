@@ -17,7 +17,7 @@ description: 원장님 학원 홈페이지와 관리자 화면을 템플릿으�
 <!-- /yomates-install:skill -->
 
 템플릿 저장소: https://github.com/from5302-lab/yomates-academy-homepage
-데모(가짜 학원 '한빛영어학원'): https://yomates-academy-demo.web.app (기능 전부 켬) · https://yomates-academy-demo.web.app/?demo=basic (기본만)
+데모(예시 학원 '한빛영어학원'): https://yomates-academy-demo.web.app (기능 전부 켬) · https://yomates-academy-demo.web.app/?demo=basic (기본만)
 
 **원칙:** 원장님이 할 일은 두 가지뿐이다.
 1. 구글 로그인 (Firebase 로그인, 관리자 화면 로그인)
@@ -95,7 +95,7 @@ https://github.com/from5302-lab/yomates-firebase-skill 의 순서를 따른다. 
 
 ## 4. 장부 값으로 academy.json 채우기
 
-`academy.json`은 지금 가짜 학원 값이다. 원장님 장부(학원 정보 페이지, 교육청 게시 원비표, 시간표)에서 찾아 모두 바꾼다.
+`academy.json`은 지금 예시 학원 값이다. 원장님 장부(학원 정보 페이지, 교육청 게시 원비표, 시간표)에서 찾아 모두 바꾼다.
 
 | 칸 | 넣을 것 |
 |---|---|
@@ -147,7 +147,7 @@ firebase deploy --only hosting,firestore --project <아이디>
 
 - `curl -s -o /dev/null -w "%{http_code}" https://<아이디>.web.app/` → 200
 - `curl -s -o /dev/null -w "%{http_code}" https://<아이디>.web.app/.git/config` → 404
-- 홈페이지에서 가짜 이름으로 상담 신청을 한 건 보내고, 관리자 화면 '상담'에 뜨는지 본 다음 그 신청을 지운다.
+- 홈페이지에서 시험용 이름으로 상담 신청을 한 건 보내고, 관리자 화면 '상담'에 뜨는지 본 다음 그 신청을 지운다.
 - 휴대폰 크기(390px)와 PC(1280px)로 홈페이지를 캡처해 원장님께 보여 준다.
 
 ## 문자 보내기 (솔라피 스킬)

@@ -1,9 +1,20 @@
 // 데이터 층: firebase-config.json이 있으면 Firebase, 없으면 데모(이 브라우저 안에만 저장).
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 let mode = null, fb = null, db = null, auth = null, F = null, A = null;
+// 미리보기(?preview=키): 학원 홈페이지 신청서(edu-on)가 같은 출처 iframe 으로 띄운다.
+// 학원 정보는 부모 창의 window.__academyPreview(키)에서만 받고, 어디에도 저장하거나 보내지 않는다. (2026-11-08 Yui)
+const PREVIEW = typeof location !== "undefined" ? new URLSearchParams(location.search).get("preview") : null;
+export const isPreview = () => PREVIEW !== null;
+function previewGuard() {
+  document.documentElement.dataset.preview = "";
+  // 미리보기 안에서는 다른 주소로 가거나 신청을 보내지 않는다(같은 쪽 #이동만)
+  document.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a[href]"); if (a && !a.getAttribute("href").startsWith("#")) e.preventDefault(); }, true);
+  document.addEventListener("submit", e => e.preventDefault(), true);
+}
 
 export async function init() {
   if (mode) return mode;
+  if (PREVIEW !== null) { mode = "demo"; previewGuard(); return mode; }
   let cfg = null;
   try {
     const r = await fetch("/firebase-config.json", { cache: "no-store" });
@@ -123,6 +134,9 @@ export async function loadDefaults() {
 // fallback: 아직 관리자 화면에서 저장하기 전이면 academy.json 값으로 홈페이지를 그린다(관리자 화면은 false).
 export async function getConfig(fallback = true) {
   await init();
+  if (PREVIEW !== null) {
+    try { const f = window.parent !== window ? window.parent.__academyPreview : null; const c = typeof f === "function" ? f(PREVIEW) : null; return c && c.name ? c : null; } catch (e) { return null; }
+  }
   if (mode === "demo") {
     const pre = new URLSearchParams(location.search).get("demo");
     const s = localStorage.getItem("ah:config");
@@ -243,7 +257,7 @@ function demoList(col) {
 }
 function demoSave(col, l) { localStorage.setItem("ah:" + col, JSON.stringify(l)); }
 
-// 데모 자료: 모두 가짜 학생, 가짜 번호다.
+// 데모 자료: 모두 예시 학생, 예시 번호다.
 function demoSeed() {
   const t = new Date(); const day = k => ymd(new Date(t.getFullYear(), t.getMonth(), t.getDate() + k));
   const ym = ymd(t).slice(0, 7);
@@ -258,10 +272,10 @@ function demoSeed() {
   return {
     students: S,
     inquiries: [
-      { id: "q1", name: "윤○○ (가짜)", grade: "초3", phone: "01000000011", time: "평일 19:00~20:00", memo: "", status: "문의", createdAt: Date.now() - 3600e3 },
-      { id: "q2", name: "한○○ (가짜)", grade: "중1", phone: "01000000012", time: "토요일 10:00~12:00", memo: "내신반 시간 문의", status: "예약", when: day(1) + " 10:30", createdAt: Date.now() - 86400e3 },
-      { id: "q4", name: "문○○ (가짜)", grade: "초5", phone: "01000000014", time: "평일 14:00~15:00", memo: "", status: "문의", source: "레벨테스트", level: "6/8점 · Level 2 · 추천 초등 리딩 B", createdAt: Date.now() - 2 * 3600e3 },
-      { id: "q3", name: "서○○ (가짜)", grade: "초5", phone: "01000000013", time: "평일 14:00~15:00", memo: "", status: "등록", createdAt: Date.now() - 5 * 86400e3 }
+      { id: "q1", name: "윤○○ (예시)", grade: "초3", phone: "01000000011", time: "평일 19:00~20:00", memo: "", status: "문의", createdAt: Date.now() - 3600e3 },
+      { id: "q2", name: "한○○ (예시)", grade: "중1", phone: "01000000012", time: "토요일 10:00~12:00", memo: "내신반 시간 문의", status: "예약", when: day(1) + " 10:30", createdAt: Date.now() - 86400e3 },
+      { id: "q4", name: "문○○ (예시)", grade: "초5", phone: "01000000014", time: "평일 14:00~15:00", memo: "", status: "문의", source: "레벨테스트", level: "6/8점 · Level 2 · 추천 초등 리딩 B", createdAt: Date.now() - 2 * 3600e3 },
+      { id: "q3", name: "서○○ (예시)", grade: "초5", phone: "01000000013", time: "평일 14:00~15:00", memo: "", status: "등록", createdAt: Date.now() - 5 * 86400e3 }
     ],
     schedule: [
       { id: "e1", type: "상담", date: day(0), time: "14:30", title: "신규 상담 · 초3 학부모" },
